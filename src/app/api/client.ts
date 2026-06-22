@@ -1,4 +1,4 @@
-const BASE = "";
+const BASE = "https://entr-production.up.railway.app";
 
 async function request<T>(
   path: string,

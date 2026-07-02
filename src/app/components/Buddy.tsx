@@ -11,10 +11,7 @@ import { buddyApi, type BuddyTurn } from "../api/client";
 const NAVY = "#0A0F1E";
 const GOLD = "#D4A853";
 
-const WELCOME =
-  "Hi! I'm Buddy. I can help you use ENTR — posting jobs, applying, " +
-  "verifying your identity, scheduling interviews, or translating text. " +
-  "You can write to me in any language.";
+const WELCOME = "👋 Hi! I'm Buddy, your ENTR assistant. How can I help you today?";
 
 interface Message {
   role: "user" | "assistant";

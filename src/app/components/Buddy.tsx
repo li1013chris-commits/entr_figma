@@ -11,7 +11,7 @@ import { buddyApi, type BuddyTurn } from "../api/client";
 const NAVY = "#0A0F1E";
 const GOLD = "#D4A853";
 
-const WELCOME = "👋 Hi! I'm Buddy, your ENTR assistant. How can I help you today?";
+const WELCOME = "👋 Hi! I'm Buddy. What language do you prefer? / 你想用什么语言？/ ¿Qué idioma prefieres?";
 
 interface Message {
   role: "user" | "assistant";

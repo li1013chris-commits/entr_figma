@@ -5,6 +5,7 @@ import { workerApi, type Job } from "../../api/client";
 import { useLang } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { ShareModal } from "../../components/ShareModal";
+import { ContactEmployer } from "../../components/ContactEmployer";
 
 // ── Fuzzy search ──────────────────────────────────────────────────────────────
 
@@ -374,6 +375,9 @@ export function BrowseJobsPage() {
 
               {/* Translate / Simplify widget */}
               <TranslateWidget job={job} userLang={userLang} />
+
+              {/* Contact methods the employer provided */}
+              <ContactEmployer job={job} compact />
 
               <div style={{ marginTop: "auto", paddingTop: 14, display: "flex", gap: 8 }}>
                 <Link

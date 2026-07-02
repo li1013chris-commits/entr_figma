@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { publicApi, type Job } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { ShareModal } from "../components/ShareModal";
+import { ContactEmployer, hasContactInfo } from "../components/ContactEmployer";
 
 function MetaBadge({ label, value }: { label: string; value: string }) {
   return (
@@ -175,6 +176,13 @@ export function PublicJobPage() {
             <div style={{ background: "#ffffff", border: "1px solid #E5E7EB", borderRadius: 12, padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
               <h2 style={{ fontSize: 15, fontWeight: 600, color: "#0A0F1E", margin: "0 0 12px" }}>About this role</h2>
               <p style={{ fontSize: 14, color: "#374151", lineHeight: 1.75, margin: 0, whiteSpace: "pre-wrap" }}>{job.description}</p>
+            </div>
+          )}
+
+          {/* Contact methods */}
+          {hasContactInfo(job) && (
+            <div style={{ marginTop: 14, background: "#ffffff", border: "1px solid #E5E7EB", borderRadius: 12, padding: "20px 24px", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+              <ContactEmployer job={job} />
             </div>
           )}
 

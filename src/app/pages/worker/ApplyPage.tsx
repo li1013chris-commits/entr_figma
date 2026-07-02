@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { workerApi, type Job } from "../../api/client";
 import { useLang } from "../../context/LanguageContext";
+import { ContactEmployer, hasContactInfo } from "../../components/ContactEmployer";
 
 export function ApplyPage() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -70,6 +71,11 @@ export function ApplyPage() {
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #F3F4F6" }}>
               <p style={{ fontSize: 11, fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 8px" }}>{a.description}</p>
               <p style={{ fontSize: 13, color: "#374151", margin: 0, lineHeight: "1.6", whiteSpace: "pre-wrap" }}>{job.description}</p>
+            </div>
+          )}
+          {hasContactInfo(job) && (
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #F3F4F6" }}>
+              <ContactEmployer job={job} />
             </div>
           )}
         </motion.div>

@@ -271,21 +271,57 @@ export function BrowseJobsPage() {
   const [search, setSearch] = useState("");
   const [shareJob, setShareJob] = useState<Job | null>(null);
 
+  // Location search (approximate, ~30 miles via backend)
+  const [locationQuery, setLocationQuery] = useState("");
+  const [locJobs, setLocJobs] = useState<Job[] | null>(null);
+  const [locNote, setLocNote] = useState("");
+  const [locActive, setLocActive] = useState("");   // the location currently applied
+  const [locLoading, setLocLoading] = useState(false);
+  const [locError, setLocError] = useState("");
+
   useEffect(() => {
     workerApi.getJobs().then((d) => setJobs(d.jobs)).finally(() => setLoading(false));
   }, []);
 
+  const runLocationSearch = async () => {
+    const q = locationQuery.trim();
+    setLocError("");
+    if (!q) { clearLocationSearch(); return; }
+    setLocLoading(true);
+    try {
+      const res = await workerApi.searchJobs(q);
+      setLocJobs(res.jobs);
+      setLocNote(res.expanded ? (res.message || "No jobs nearby — showing results within 60 miles") : "");
+      setLocActive(q);
+    } catch (e: unknown) {
+      setLocError(e instanceof Error ? e.message : "Location search failed");
+    } finally {
+      setLocLoading(false);
+    }
+  };
+
+  const clearLocationSearch = () => {
+    setLocationQuery("");
+    setLocJobs(null);
+    setLocNote("");
+    setLocActive("");
+    setLocError("");
+  };
+
+  // Base list: location results when active, otherwise all jobs
+  const baseJobs = locJobs ?? jobs;
+
   // Fuzzy filter: keep jobs with score > 0, sort by score desc
   const scored = search.trim()
-    ? jobs
+    ? baseJobs
         .map((j) => ({ job: j, score: fuzzyScore(search, j) }))
         .filter((x) => x.score > 0)
         .sort((a, b) => b.score - a.score)
         .map((x) => x.job)
-    : jobs;
+    : baseJobs;
 
   const suggestion = scored.length === 0 && search.trim()
-    ? bestSuggestion(search, jobs)
+    ? bestSuggestion(search, baseJobs)
     : null;
 
   const userLang = user?.language_pref ?? "en";
@@ -299,6 +335,57 @@ export function BrowseJobsPage() {
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>{b.title}</h1>
         <p style={{ fontSize: 14, color: "#6B7280", margin: "6px 0 0" }}>{jobs.length} {b.title.toLowerCase()}</p>
       </motion.div>
+
+      {/* Location search */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: 8, maxWidth: 480, flexWrap: "wrap" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 220 }}>
+            <svg aria-hidden="true" style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF", pointerEvents: "none" }} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+            </svg>
+            <input
+              type="text"
+              value={locationQuery}
+              onChange={(e) => setLocationQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && runLocationSearch()}
+              placeholder="Search by city or town (e.g. Greensboro)"
+              aria-label="Search jobs by location"
+              style={{ width: "100%", paddingLeft: 36, paddingRight: 14, paddingTop: 10, paddingBottom: 10, fontSize: 14, border: "1.5px solid #E5E7EB", borderRadius: 8, outline: "none", fontFamily: "Inter, sans-serif", color: "#0A0F1E", background: "#fff", boxSizing: "border-box" }}
+              onFocus={(e) => (e.target.style.borderColor = "#D4A853")}
+              onBlur={(e) => (e.target.style.borderColor = "#E5E7EB")}
+            />
+          </div>
+          <button
+            onClick={runLocationSearch}
+            disabled={locLoading}
+            style={{ padding: "10px 18px", fontSize: 14, fontWeight: 600, fontFamily: "Inter, sans-serif", color: "#0A0F1E", background: locLoading ? "#F3F4F6" : "#D4A853", border: "none", borderRadius: 8, cursor: locLoading ? "not-allowed" : "pointer", boxShadow: locLoading ? "none" : "0 2px 6px rgba(212,168,83,0.3)" }}
+          >
+            {locLoading ? "Searching…" : "Search area"}
+          </button>
+          {locActive && (
+            <button
+              onClick={clearLocationSearch}
+              style={{ padding: "10px 14px", fontSize: 13, fontWeight: 500, fontFamily: "Inter, sans-serif", color: "#6B7280", background: "transparent", border: "1.5px solid #E5E7EB", borderRadius: 8, cursor: "pointer" }}
+            >
+              ✕ Clear
+            </button>
+          )}
+        </div>
+
+        {locError && (
+          <p role="alert" style={{ fontSize: 13, color: "#DC2626", margin: "8px 0 0" }}>{locError}</p>
+        )}
+        {locActive && !locError && (
+          <p style={{ fontSize: 13, color: "#6B7280", margin: "8px 0 0" }}>
+            Showing jobs near <strong style={{ color: "#0A0F1E" }}>{locActive}</strong>
+          </p>
+        )}
+        {locNote && (
+          <div style={{ marginTop: 10, maxWidth: 480, background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#92400E" }}>
+            {locNote}
+          </div>
+        )}
+      </div>
 
       {/* Search bar */}
       <div style={{ marginBottom: 24 }}>
@@ -364,6 +451,15 @@ export function BrowseJobsPage() {
                 <span style={{ fontSize: 12, fontWeight: 500, color: "#6B7280", background: "#F7F7F5", border: "1px solid #E5E7EB", padding: "3px 10px", borderRadius: 20 }}>{job.hours}</span>
                 {job.location && (
                   <span style={{ fontSize: 12, fontWeight: 500, color: "#6B7280", background: "#F7F7F5", border: "1px solid #E5E7EB", padding: "3px 10px", borderRadius: 20 }}>{job.location}</span>
+                )}
+                {job.distance_miles != null && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", padding: "3px 10px", borderRadius: 20 }}>
+                    <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+                    </svg>
+                    {job.distance_miles < 1 ? "Less than 1 mile away"
+                      : `${job.distance_miles} mile${job.distance_miles !== 1 ? "s" : ""} away`}
+                  </span>
                 )}
               </div>
 

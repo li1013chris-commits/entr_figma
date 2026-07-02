@@ -231,8 +231,20 @@ export const employerApi = {
 
 // ── Worker ─────────────────────────────────────────────────────────────────
 
+export interface JobSearchResult {
+  jobs: Job[];
+  radius_miles: number | null;
+  expanded: boolean;
+  message?: string;
+}
+
 export const workerApi = {
   getJobs: () => request<{ jobs: Job[] }>("/api/worker/jobs"),
+
+  searchJobs: (location: string) =>
+    request<JobSearchResult>(
+      `/api/worker/jobs/search?location=${encodeURIComponent(location)}`
+    ),
 
   apply: (jobId: number, cover_letter: string) =>
     request<{ application: Application }>(

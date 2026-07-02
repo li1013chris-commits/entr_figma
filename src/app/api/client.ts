@@ -339,6 +339,18 @@ export const userApi = {
     request<{ ok: boolean }>("/api/user/delete-account", { method: "POST" }),
 };
 
+// ── Buddy chatbot ──────────────────────────────────────────────────────────────
+
+export interface BuddyTurn {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export const buddyApi = {
+  send: (message: string, history: BuddyTurn[]) =>
+    request<{ reply: string }>("/api/buddy", json({ message, history })),
+};
+
 // ── Public jobs ────────────────────────────────────────────────────────────────
 
 export const publicApi = {

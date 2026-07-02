@@ -13,7 +13,7 @@ import { FeaturesSection } from "./components/FeaturesSection";
 import { HowItWorks } from "./components/HowItWorks";
 import { PricingSection } from "./components/PricingSection";
 import { Footer } from "./components/Footer";
-import { AIChat } from "./components/AIChat";
+import { Buddy } from "./components/Buddy";
 
 // Auth pages
 import { LoginPage } from "./pages/LoginPage";
@@ -104,7 +104,6 @@ function LandingPage() {
       <HowItWorks />
       <PricingSection />
       <Footer />
-      <AIChat />
     </>
   );
 }
@@ -251,6 +250,9 @@ export default function App() {
             }
           />
         </Routes>
+
+        {/* Buddy chatbot — floats on every page */}
+        <Buddy />
       </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>

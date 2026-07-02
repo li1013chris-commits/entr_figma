@@ -59,8 +59,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
       }}>
         <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
 
-          {/* Logo */}
-          <Link to="/" style={{ textDecoration: "none", flexShrink: 0 }}>
+          {/* Logo — always goes to the user's dashboard, never "out" of the app */}
+          <Link
+            to={user?.role === "employer" ? "/employer/dashboard" : "/worker/dashboard"}
+            style={{ textDecoration: "none", flexShrink: 0 }}
+            aria-label="Go to dashboard"
+          >
             <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px" }}>
               <span style={{ color: "#0A0F1E" }}>EN</span>
               <span style={{ color: "#C9A84C" }}>TR</span>

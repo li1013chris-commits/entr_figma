@@ -64,7 +64,11 @@ export function PublicJobPage() {
       {/* Navbar */}
       <nav style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderBottom: "1px solid #E5E7EB", boxShadow: "0 1px 8px rgba(0,0,0,0.05)", position: "sticky", top: 0, zIndex: 50 }}>
         <div style={{ maxWidth: 800, margin: "0 auto", padding: "0 24px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <Link to="/" style={{ textDecoration: "none" }}>
+          <Link
+            to={user ? (user.role === "employer" ? "/employer/dashboard" : "/worker/dashboard") : "/"}
+            style={{ textDecoration: "none" }}
+            aria-label={user ? "Go to dashboard" : "Go to home"}
+          >
             <span style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.5px" }}>
               <span style={{ color: "#0A0F1E" }}>EN</span><span style={{ color: "#C9A84C" }}>TR</span>
             </span>

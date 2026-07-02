@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router";
+import { useNavigate, Link, useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../context/LanguageContext";
+import { authApi } from "../api/client";
 
 function Divider() {
   return (
@@ -44,12 +45,21 @@ export function LoginPage() {
   const a          = t.auth;
   const navigate   = useNavigate();
 
+  const [searchParams] = useSearchParams();
+
   const [email, setEmail]     = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw]   = useState(false);
   const [error, setError]     = useState("");
+  const [unverified, setUnverified] = useState(false);
+  const [resending, setResending]   = useState(false);
+  const [resentMsg, setResentMsg]   = useState("");
   const [loading, setLoading] = useState(false);
   const [toast, setToast]     = useState("");
+
+  // Banners set by the email-link redirect (/login?verified=1 or ?verify_error=1)
+  const justVerified = searchParams.get("verified") === "1";
+  const verifyError  = searchParams.get("verify_error") === "1";
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -58,13 +68,40 @@ export function LoginPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    setError(""); setLoading(true);
+    setError(""); setUnverified(false); setResentMsg(""); setLoading(true);
     try {
       const user = await login(email, password);
       navigate(user.role === "employer" ? "/employer/dashboard" : "/worker/dashboard", { replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      const msg = err instanceof Error ? err.message : "Login failed";
+      if (msg.toLowerCase().includes("verify your email")) {
+        setUnverified(true);
+        setError("Your email is not verified. Check your inbox or resend the link.");
+      } else {
+        setError(msg);
+      }
     } finally { setLoading(false); }
+  };
+
+  const handleResend = async () => {
+    if (!email.trim()) {
+      setResentMsg("Enter your email above first.");
+      return;
+    }
+    setResending(true);
+    setResentMsg("");
+    try {
+      const res = await authApi.resendVerification(email.trim());
+      setResentMsg(
+        res.sent
+          ? "Verification email sent. Check your inbox."
+          : "If that account exists and is unverified, a new link was sent."
+      );
+    } catch (e: unknown) {
+      setResentMsg(e instanceof Error ? e.message : "Could not resend. Try again in a minute.");
+    } finally {
+      setResending(false);
+    }
   };
 
   const inputBase: React.CSSProperties = {
@@ -89,10 +126,32 @@ export function LoginPage() {
         <p style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>{a.welcomeBack}</p>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: "#0A0F1E", margin: "0 0 24px" }}>{a.signInTitle}</h1>
 
+        {justVerified && (
+          <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: 8, padding: "12px 14px", fontSize: 13, color: "#16A34A", marginBottom: 18, display: "flex", alignItems: "center", gap: 8, fontWeight: 500 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>
+            Email verified! You can log in now.
+          </div>
+        )}
+        {verifyError && (
+          <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "12px 14px", fontSize: 13, color: "#DC2626", marginBottom: 18 }}>
+            That verification link is invalid or was already used. Log in, or resend the link from the signup confirmation page.
+          </div>
+        )}
         {error && (
-          <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "12px 14px", fontSize: 13, color: "#DC2626", marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/></svg>
-            {error}
+          <div style={{ background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "12px 14px", fontSize: 13, color: "#DC2626", marginBottom: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="16" r="0.5" fill="currentColor"/></svg>
+              {error}
+            </div>
+            {unverified && (
+              <div style={{ marginTop: 10 }}>
+                <button type="button" onClick={handleResend} disabled={resending}
+                  style={{ padding: "8px 16px", background: resending ? "#F3F4F6" : "#C9A84C", color: "#0A0F1E", border: "none", borderRadius: 7, fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: resending ? "not-allowed" : "pointer" }}>
+                  {resending ? "Sending…" : "Resend verification email"}
+                </button>
+                {resentMsg && <p style={{ fontSize: 12.5, color: "#16A34A", margin: "8px 0 0" }}>{resentMsg}</p>}
+              </div>
+            )}
           </div>
         )}
 

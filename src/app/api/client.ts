@@ -186,6 +186,9 @@ export const authApi = {
 
   resetPassword: (token: string, new_password: string) =>
     request<{ ok: boolean }>("/api/auth/reset-password", json({ token, new_password })),
+
+  resendVerification: (email: string) =>
+    request<{ ok: boolean; sent: boolean }>("/api/resend-verification", json({ email })),
 };
 
 // ── Employer ───────────────────────────────────────────────────────────────

@@ -2,7 +2,6 @@ import { useState, type FormEvent, useEffect } from "react";
 import { useNavigate, Link, useSearchParams } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { authApi } from "../api/client";
-import { useAuth } from "../context/AuthContext";
 import { useLang } from "../context/LanguageContext";
 
 const US_STATES = [
@@ -131,7 +130,6 @@ function FieldError({ msg }: { msg: string }) {
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export function SignupPage() {
-  const { fetchMe }       = useAuth();
   const { t }             = useLang();
   const a                 = t.auth;
   const navigate          = useNavigate();
@@ -199,8 +197,8 @@ export function SignupPage() {
         date_of_birth: role === "worker" ? dateOfBirth : undefined,
         us_state: role === "worker" ? usState : undefined,
       });
-      await fetchMe();
-      navigate("/verify-email", { replace: true });
+      // No session is created until the email link is clicked.
+      navigate("/verify-email", { replace: true, state: { email } });
     } catch (err: unknown) {
       setApiError(err instanceof Error ? err.message : "Signup failed");
     } finally {

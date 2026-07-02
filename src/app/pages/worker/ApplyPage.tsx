@@ -5,6 +5,7 @@ import { workerApi, type Job } from "../../api/client";
 import { useLang } from "../../context/LanguageContext";
 import { ContactEmployer, hasContactInfo } from "../../components/ContactEmployer";
 import { EmploymentDisclosure } from "../../components/EmploymentDisclosure";
+import { BackArrow } from "../../components/BackArrow";
 
 export function ApplyPage() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -45,10 +46,7 @@ export function ApplyPage() {
   return (
     <div>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 28 }}>
-        <button onClick={() => navigate("/worker/jobs")}
-          style={{ background: "none", border: "none", color: "#C9A84C", fontSize: 13, fontWeight: 500, cursor: "pointer", padding: "0 0 8px", fontFamily: "Inter, sans-serif" }}>
-          {a.back}
-        </button>
+        <BackArrow />
         <p style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>{a.label}</p>
         <h1 style={{ fontSize: 26, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>{job.title}</h1>
         <p style={{ fontSize: 14, color: "#6B7280", margin: "4px 0 0" }}>{job.restaurant_name || job.employer_name}{job.location ? ` · ${job.location}` : ""}</p>

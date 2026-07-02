@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { workerApi, type Verification } from "../../api/client";
 import { useLang } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
+import { BackArrow } from "../../components/BackArrow";
 
 // States with biometric privacy laws requiring explicit consent
 const BIPA_STATES: Record<string, string> = {
@@ -339,6 +340,7 @@ export function VerifyPage() {
 
   return (
     <div>
+      <BackArrow />
       {/* Page header */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
         <p style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>{v.label}</p>

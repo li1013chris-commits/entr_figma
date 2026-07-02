@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { workerApi } from "../../api/client";
+import { BackArrow } from "../../components/BackArrow";
 
 const SKILLS = [
   "grill",
@@ -94,6 +95,7 @@ export function ProfilePage() {
       }}
     >
       <div style={{ maxWidth: 600, margin: "0 auto" }}>
+        <BackArrow />
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { employerApi } from "../../api/client";
+import { BackArrow } from "../../components/BackArrow";
 
 const PAY_TYPES = [
   { value: "per_hour",    label: "Per Hour" },
@@ -125,6 +126,7 @@ export function PostJobPage() {
 
   return (
     <div style={{ maxWidth: 650, margin: "0 auto" }}>
+      <BackArrow />
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

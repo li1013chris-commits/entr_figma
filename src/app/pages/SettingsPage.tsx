@@ -3,6 +3,7 @@ import { motion } from "motion/react";
 import { useAuth } from "../context/AuthContext";
 import { DeleteAccountModal } from "../components/DeleteAccountModal";
 import { calendarApi } from "../api/client";
+import { BackArrow } from "../components/BackArrow";
 
 const API_BASE = "https://entr-production.up.railway.app";
 
@@ -62,6 +63,7 @@ export function SettingsPage() {
 
   return (
     <div>
+      <BackArrow />
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 32 }}>
         <p style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Account</p>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>Settings</h1>

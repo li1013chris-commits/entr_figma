@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { employerVerifyApi, type EmployerVerification } from "../../api/client";
+import { BackArrow } from "../../components/BackArrow";
 
 function StatusCard({ ev }: { ev: EmployerVerification }) {
   const colors: Record<string, { bg: string; color: string; border: string }> = {
@@ -165,6 +166,7 @@ export function VerifyBusinessPage() {
 
   return (
     <div>
+      <BackArrow />
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 28 }}>
         <p style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 6px" }}>Employer</p>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>Business Verification</h1>

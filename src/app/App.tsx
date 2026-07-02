@@ -14,6 +14,8 @@ import { HowItWorks } from "./components/HowItWorks";
 import { PricingSection } from "./components/PricingSection";
 import { Footer } from "./components/Footer";
 import { Buddy } from "./components/Buddy";
+import { CookieConsent } from "./components/CookieConsent";
+import { PrivacyPolicyPage, TermsPage, BiometricConsentPage, DoNotSellPage } from "./pages/LegalPages";
 
 // Auth pages
 import { LoginPage } from "./pages/LoginPage";
@@ -134,6 +136,12 @@ export default function App() {
           {/* Public job listing */}
           <Route path="/jobs/:jobId" element={<PublicJobPage />} />
 
+          {/* Legal pages */}
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/biometric-consent" element={<BiometricConsentPage />} />
+          <Route path="/do-not-sell" element={<DoNotSellPage />} />
+
           {/* Employer routes */}
           <Route
             path="/employer/dashboard"
@@ -253,6 +261,9 @@ export default function App() {
 
         {/* Buddy chatbot — floats on every page */}
         <Buddy />
+
+        {/* Cookie consent banner (first visit only) */}
+        <CookieConsent />
       </AuthProvider>
       </LanguageProvider>
     </BrowserRouter>

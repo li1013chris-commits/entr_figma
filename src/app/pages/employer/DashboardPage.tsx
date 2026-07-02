@@ -5,6 +5,7 @@ import { employerApi, type Job } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { ShareModal } from "../../components/ShareModal";
+import { EmploymentDisclosure } from "../../components/EmploymentDisclosure";
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -161,6 +162,8 @@ export function EmployerDashboardPage() {
           </div>
         )}
       </motion.div>
+
+      <EmploymentDisclosure />
 
       {shareJob && (
         <ShareModal jobId={shareJob.id} jobTitle={shareJob.title} onClose={() => setShareJob(null)} />

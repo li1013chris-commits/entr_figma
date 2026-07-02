@@ -5,6 +5,23 @@ import { authApi } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../context/LanguageContext";
 
+const US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS",
+  "KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY",
+  "NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV",
+  "WI","WY","DC",
+];
+
+function ageFromDob(dob: string): number | null {
+  if (!dob) return null;
+  const d = new Date(dob + "T00:00:00");
+  if (isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--;
+  return age;
+}
+
 function SocialButton({ icon, label, onClick }: { icon: React.ReactNode; label: string; onClick: () => void }) {
   return (
     <motion.button onClick={onClick}
@@ -129,6 +146,9 @@ export function SignupPage() {
   const [role, setRole]                     = useState<"employer" | "worker">((searchParams.get("role") as "employer" | "worker") || "worker");
   const [restaurantName, setRestaurantName] = useState("");
   const [languagePref, setLanguagePref]     = useState("en");
+  const [dateOfBirth, setDateOfBirth]       = useState("");
+  const [usState, setUsState]               = useState("");
+  const [tosAccepted, setTosAccepted]       = useState(false);
   const [apiError, setApiError]             = useState("");
   const [loading, setLoading]               = useState(false);
   const [submitted, setSubmitted]           = useState(false);
@@ -152,12 +172,16 @@ export function SignupPage() {
                             : submitted && !confirm                 ? "Please confirm your password."   : "";
   const restaurantError   = submitted && role === "employer" && !restaurantName.trim()
                             ? "Restaurant name is required."        : "";
+  const tosError          = submitted && !tosAccepted
+                            ? "Please agree to the Privacy Policy and Terms of Service." : "";
 
   const strength = getStrength(password);
   const passwordsMatch = password.length >= 8 && confirm === password;
+  const workerAge = role === "worker" ? ageFromDob(dateOfBirth) : null;
+  const under18 = workerAge !== null && workerAge < 18;
 
   const isValid = name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    && password.length >= 8 && passwordsMatch
+    && password.length >= 8 && passwordsMatch && tosAccepted
     && (role !== "employer" || restaurantName.trim());
 
   const handleSubmit = async (e: FormEvent) => {
@@ -167,7 +191,14 @@ export function SignupPage() {
     setApiError("");
     setLoading(true);
     try {
-      await authApi.signup({ email, password, name, role, language_pref: languagePref, restaurant_name: restaurantName });
+      await authApi.signup({
+        email, password, name, role,
+        language_pref: languagePref,
+        restaurant_name: restaurantName,
+        tos_accepted: tosAccepted,
+        date_of_birth: role === "worker" ? dateOfBirth : undefined,
+        us_state: role === "worker" ? usState : undefined,
+      });
       await fetchMe();
       navigate("/verify-email", { replace: true });
     } catch (err: unknown) {
@@ -334,6 +365,45 @@ export function SignupPage() {
             </div>
           )}
 
+          {/* Worker: date of birth + state */}
+          {role === "worker" && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div>
+                <FieldLabel>Date of birth</FieldLabel>
+                <input
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  max={new Date().toISOString().slice(0, 10)}
+                  aria-label="Date of birth"
+                  style={inputBase}
+                  onFocus={focus} onBlur={(e) => blur(e, "")}
+                />
+                {under18 && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                    style={{ fontSize: 12, color: "#D97706", margin: "6px 0 0", lineHeight: 1.5, background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 6, padding: "8px 10px" }}
+                  >
+                    Some jobs may have age restrictions. Please check with the employer before applying.
+                  </motion.p>
+                )}
+              </div>
+              <div>
+                <FieldLabel>State</FieldLabel>
+                <select
+                  value={usState}
+                  onChange={(e) => setUsState(e.target.value)}
+                  aria-label="US state"
+                  style={{ ...inputBase, appearance: "none", backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center", backgroundSize: "16px", paddingRight: 36 }}
+                  onFocus={focus} onBlur={(e) => blur(e, "")}
+                >
+                  <option value="">Choose…</option>
+                  {US_STATES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
           {/* Preferred language */}
           <div>
             <FieldLabel>{a.preferredLanguage}</FieldLabel>
@@ -347,6 +417,26 @@ export function SignupPage() {
               <option value="pt">Português</option>
               <option value="vi">Tiếng Việt</option>
             </select>
+          </div>
+
+          {/* Terms of Service agreement */}
+          <div>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={tosAccepted}
+                onChange={(e) => setTosAccepted(e.target.checked)}
+                style={{ width: 18, height: 18, marginTop: 1, cursor: "pointer", accentColor: "#D4A853", flexShrink: 0 }}
+              />
+              <span style={{ fontSize: 13, color: "#374151", lineHeight: 1.5 }}>
+                I agree to the{" "}
+                <Link to="/privacy" target="_blank" style={{ color: "#C9A84C", fontWeight: 600 }}>Privacy Policy</Link>
+                {" "}and{" "}
+                <Link to="/terms" target="_blank" style={{ color: "#C9A84C", fontWeight: 600 }}>Terms of Service</Link>
+                <span style={{ color: "#EF4444", marginLeft: 3, fontWeight: 700 }}>*</span>
+              </span>
+            </label>
+            <FieldError msg={tosError} />
           </div>
 
           {/* Submit */}

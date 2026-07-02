@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { motion, AnimatePresence } from "motion/react";
 import { employerApi, referralApi, type Application, type Job, type Referral } from "../../api/client";
+import { ScheduleInterviewModal } from "../../components/ScheduleInterviewModal";
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
@@ -33,7 +34,8 @@ function VerifBadge({ status }: { status: string | null | undefined }) {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "#6B7280", reviewed: "#2563EB", accepted: "#16A34A", rejected: "#DC2626", hired: "#7C3AED",
+  pending: "#6B7280", reviewed: "#2563EB", accepted: "#16A34A", rejected: "#DC2626",
+  hired: "#7C3AED", interview_scheduled: "#D4A853",
 };
 const ALL_STATUSES = ["pending", "reviewed", "accepted", "rejected", "hired"] as const;
 
@@ -194,6 +196,7 @@ export function ApplicationsPage() {
   const [employerVerified, setEmployerVerified] = useState(false);
   const [loading, setLoading]               = useState(true);
   const [error, setError]                   = useState("");
+  const [scheduleApp, setScheduleApp]       = useState<Application | null>(null);
 
   useEffect(() => {
     if (!jobId) return;
@@ -268,6 +271,26 @@ export function ApplicationsPage() {
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
                   <FitScoreBar score={app.ai_score ?? null} notScored="Not scored" />
                   <StatusDropdown appId={app.id} currentStatus={app.status} onUpdate={handleStatusUpdate} />
+                  {(app.status as string) === "interview_scheduled" ? (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 7, padding: "5px 10px" }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      Interview scheduled
+                    </span>
+                  ) : app.status !== "rejected" && (
+                    <button
+                      onClick={() => setScheduleApp(app)}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#0A0F1E", background: "transparent", border: "1.5px solid #D4A853", borderRadius: 7, padding: "5px 12px", cursor: "pointer", fontFamily: "Inter, sans-serif" }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "#FFFBF0"; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D4A853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                      </svg>
+                      Schedule Interview
+                    </button>
+                  )}
                   <ReferButton app={app} employerVerified={employerVerified} onReferred={handleReferred} />
                 </div>
               </div>
@@ -317,6 +340,21 @@ export function ApplicationsPage() {
             </motion.div>
           ))}
         </div>
+      )}
+
+      {scheduleApp && (
+        <ScheduleInterviewModal
+          appId={scheduleApp.id}
+          workerName={scheduleApp.name || "the worker"}
+          onClose={() => setScheduleApp(null)}
+          onScheduled={() => {
+            // Direct manual scheduling marks the application immediately;
+            // proposals stay pending until the worker confirms.
+            setApplications((prev) =>
+              prev.map((a) => a.id === scheduleApp.id ? { ...a } : a)
+            );
+          }}
+        />
       )}
     </div>
   );

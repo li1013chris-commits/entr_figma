@@ -5,6 +5,7 @@ import { publicApi, type Job } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { ShareModal } from "../components/ShareModal";
 import { ContactEmployer, hasContactInfo } from "../components/ContactEmployer";
+import { EmploymentDisclosure } from "../components/EmploymentDisclosure";
 
 function MetaBadge({ label, value }: { label: string; value: string }) {
   return (
@@ -198,6 +199,7 @@ export function PublicJobPage() {
               </Link>
             </div>
           )}
+          <EmploymentDisclosure />
         </motion.div>
       </main>
 

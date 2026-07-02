@@ -47,6 +47,8 @@ export interface User {
   skills: string | null;
   availability: string | null;
   profile_complete: boolean;
+  date_of_birth?: string | null;
+  us_state?: string | null;
 }
 
 export interface Job {
@@ -88,7 +90,7 @@ export interface Application {
   cover_letter: string | null;
   ai_score: number | null;
   ai_summary: string | null;
-  status: "pending" | "reviewed" | "accepted" | "rejected" | "hired";
+  status: "pending" | "reviewed" | "accepted" | "rejected" | "hired" | "interview_scheduled";
   created_at: string;
   // joined fields
   name?: string;
@@ -168,7 +170,10 @@ export const authApi = {
     language_pref?: string;
     restaurant_name?: string;
     phone?: string;
-  }) => request<{ user: User }>("/api/auth/signup", json(body)),
+    tos_accepted?: boolean;
+    date_of_birth?: string;
+    us_state?: string;
+  }) => request<{ user: User; under_18?: boolean }>("/api/auth/signup", json(body)),
 
   login: (body: { email: string; password: string }) =>
     request<{ user: User }>("/api/auth/login", json(body)),
@@ -337,6 +342,74 @@ export const employerVerifyApi = {
 export const userApi = {
   deleteAccount: () =>
     request<{ ok: boolean }>("/api/user/delete-account", { method: "POST" }),
+};
+
+// ── Interviews & Google Calendar ───────────────────────────────────────────────
+
+export interface Interview {
+  id: number;
+  application_id: number;
+  employer_id: number;
+  worker_id: number;
+  scheduled_at: string;
+  google_event_id: string | null;
+  status: "scheduled" | "completed" | "cancelled";
+  worker_confirmed: number;
+  employer_confirmed: number;
+  calendar_invite_sent: number;
+  // joined fields
+  title?: string;
+  location?: string | null;
+  employer_name?: string;
+  restaurant_name?: string | null;
+  worker_name?: string;
+  worker_email?: string;
+}
+
+export interface SlotSuggestion {
+  slots: string[] | null;
+  worker_availability: { days: string[]; times: string[] } | null;
+  both_connected: boolean;
+}
+
+export const calendarApi = {
+  status: () =>
+    request<{ oauth_available: boolean; connected: boolean }>("/api/calendar/status"),
+
+  connect: () =>
+    request<{ auth_url: string }>("/api/calendar/connect"),
+
+  disconnect: () =>
+    request<{ ok: boolean }>("/api/calendar/disconnect", { method: "POST" }),
+};
+
+export const interviewApi = {
+  suggestSlots: (appId: number) =>
+    request<SlotSuggestion>(`/api/employer/applications/${appId}/suggest-slots`),
+
+  propose: (appId: number, scheduledAt: string) =>
+    request<{ interview: Interview }>(
+      `/api/employer/applications/${appId}/propose-interview`,
+      json({ scheduled_at: scheduledAt })
+    ),
+
+  scheduleDirect: (appId: number, scheduledAt: string) =>
+    request<{ interview: Interview }>(
+      `/api/employer/applications/${appId}/schedule-interview`,
+      json({ scheduled_at: scheduledAt })
+    ),
+
+  confirm: (interviewId: number) =>
+    request<{ interview: Interview; calendar_event_created: boolean }>(
+      `/api/worker/interviews/${interviewId}/confirm`,
+      { method: "POST" }
+    ),
+
+  listWorker: () =>
+    request<{ interviews: Interview[] }>("/api/worker/interviews"),
+
+  listEmployer: () =>
+    request<{ interviews: Interview[] }>("/api/employer/interviews"),
 };
 
 // ── Buddy chatbot ──────────────────────────────────────────────────────────────

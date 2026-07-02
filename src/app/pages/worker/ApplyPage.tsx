@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { workerApi, type Job } from "../../api/client";
 import { useLang } from "../../context/LanguageContext";
 import { ContactEmployer, hasContactInfo } from "../../components/ContactEmployer";
+import { EmploymentDisclosure } from "../../components/EmploymentDisclosure";
 
 export function ApplyPage() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -105,6 +106,8 @@ export function ApplyPage() {
           </form>
         </motion.div>
       </div>
+
+      <EmploymentDisclosure />
     </div>
   );
 }

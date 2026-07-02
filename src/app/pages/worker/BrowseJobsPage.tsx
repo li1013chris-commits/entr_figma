@@ -6,6 +6,7 @@ import { useLang } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { ShareModal } from "../../components/ShareModal";
 import { ContactEmployer } from "../../components/ContactEmployer";
+import { EmploymentDisclosure } from "../../components/EmploymentDisclosure";
 
 // ── Fuzzy search ──────────────────────────────────────────────────────────────
 
@@ -500,6 +501,8 @@ export function BrowseJobsPage() {
           ))}
         </div>
       )}
+
+      <EmploymentDisclosure />
 
       {shareJob && (
         <ShareModal jobId={shareJob.id} jobTitle={shareJob.title} onClose={() => setShareJob(null)} />

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 
+const API_BASE = "https://entr-production.up.railway.app";
+
 interface ShareModalProps {
   jobId: number;
   jobTitle: string;
@@ -28,7 +30,7 @@ export function ShareModal({ jobId, jobTitle, onClose }: ShareModalProps) {
 
   const downloadQR = () => {
     const link = document.createElement("a");
-    link.href = `/api/jobs/${jobId}/qrcode`;
+    link.href = `${API_BASE}/api/jobs/${jobId}/qrcode`;
     link.download = `entr-job-${jobId}.png`;
     document.body.appendChild(link);
     link.click();
@@ -74,7 +76,7 @@ export function ShareModal({ jobId, jobTitle, onClose }: ShareModalProps) {
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
               <div style={{ border: "2px solid #E5E7EB", borderRadius: 12, padding: 12, background: "#F9FAFB" }}>
                 <img
-                  src={`/api/jobs/${jobId}/qrcode`}
+                  src={`${API_BASE}/api/jobs/${jobId}/qrcode`}
                   alt="QR code for this job"
                   width={160}
                   height={160}

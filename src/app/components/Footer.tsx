@@ -62,7 +62,10 @@ export function Footer() {
       links: [
         { label: "About" },
         { label: "LinkedIn", href: "https://www.linkedin.com/in/christopher-li-64b149251" },
-        { label: "Privacy Policy" },
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "Terms of Service", href: "/terms" },
+        { label: "Biometric Consent", href: "/biometric-consent" },
+        { label: "Do Not Sell My Information", href: "/do-not-sell" },
       ],
     },
   ];

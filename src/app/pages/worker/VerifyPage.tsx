@@ -1,7 +1,97 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Link } from "react-router";
 import { workerApi, type Verification } from "../../api/client";
 import { useLang } from "../../context/LanguageContext";
+import { useAuth } from "../../context/AuthContext";
+
+// States with biometric privacy laws requiring explicit consent
+const BIPA_STATES: Record<string, string> = {
+  IL: "Illinois Biometric Information Privacy Act (BIPA)",
+  TX: "Texas Capture or Use of Biometric Identifier Act",
+  WA: "Washington biometric privacy law (RCW 19.375)",
+};
+
+function BiometricConsentGate({ usState, onConsent }: { usState: string | null | undefined; onConsent: () => void }) {
+  const bipaLaw = usState ? BIPA_STATES[usState.toUpperCase()] : undefined;
+  const [agreed, setAgreed] = useState(false);
+  const [bipaAgreed, setBipaAgreed] = useState(false);
+
+  const ready = agreed && (!bipaLaw || bipaAgreed);
+
+  return (
+    <motion.div
+      key="consent"
+      initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }}
+      transition={{ duration: 0.25 }}
+      style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 16, padding: 32, boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}
+    >
+      <h2 style={{ fontSize: 19, fontWeight: 700, color: "#0A0F1E", margin: "0 0 6px" }}>Before you start</h2>
+      <p style={{ fontSize: 14, color: "#6B7280", margin: "0 0 18px", lineHeight: 1.6 }}>
+        Verification compares the photo on your ID with your selfie. Please read this first.
+      </p>
+
+      <div style={{ background: "#F7F7F5", border: "1px solid #E5E7EB", borderRadius: 10, padding: "16px 18px", marginBottom: 18 }}>
+        <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14, color: "#374151", lineHeight: 1.8 }}>
+          <li>Your ID photo and selfie are used <strong>once</strong>, to check they show the same person.</li>
+          <li>Both photos are <strong>deleted from our servers immediately</strong> after the check.</li>
+          <li>We keep only your name, date of birth, and the match result.</li>
+          <li>Employers never see your documents — only that you passed.</li>
+          <li>We never sell or share biometric information.</li>
+        </ul>
+        <p style={{ fontSize: 13, margin: "12px 0 0" }}>
+          <Link to="/biometric-consent" target="_blank" style={{ color: "#C9A84C", fontWeight: 600 }}>
+            Read the full Biometric Consent Notice →
+          </Link>
+        </p>
+      </div>
+
+      <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer", marginBottom: bipaLaw ? 12 : 20 }}>
+        <input
+          type="checkbox"
+          checked={agreed}
+          onChange={(e) => setAgreed(e.target.checked)}
+          style={{ width: 18, height: 18, marginTop: 2, cursor: "pointer", accentColor: "#D4A853", flexShrink: 0 }}
+        />
+        <span style={{ fontSize: 14, color: "#0A0F1E", lineHeight: 1.5 }}>
+          I have read the Biometric Consent Notice and agree to the collection and one-time use of my ID photo and selfie for identity verification.
+        </span>
+      </label>
+
+      {bipaLaw && (
+        <div style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 10, padding: "14px 16px", marginBottom: 20 }}>
+          <p style={{ fontSize: 13, fontWeight: 700, color: "#92400E", margin: "0 0 6px" }}>
+            Additional consent for {usState!.toUpperCase()} residents
+          </p>
+          <p style={{ fontSize: 13, color: "#78350F", margin: "0 0 10px", lineHeight: 1.6 }}>
+            Because you live in a state covered by the {bipaLaw}, we need your explicit written consent
+            before collecting any biometric identifier. Your photos are deleted immediately after
+            verification and are never sold, leased, or shared.
+          </p>
+          <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+            <input
+              type="checkbox"
+              checked={bipaAgreed}
+              onChange={(e) => setBipaAgreed(e.target.checked)}
+              style={{ width: 18, height: 18, marginTop: 2, cursor: "pointer", accentColor: "#D4A853", flexShrink: 0 }}
+            />
+            <span style={{ fontSize: 13, color: "#78350F", lineHeight: 1.5, fontWeight: 600 }}>
+              I expressly consent to the capture and one-time use of my biometric information as described above.
+            </span>
+          </label>
+        </div>
+      )}
+
+      <button
+        onClick={onConsent}
+        disabled={!ready}
+        style={{ width: "100%", padding: 13, background: ready ? "#C9A84C" : "#E5E7EB", color: ready ? "#0A0F1E" : "#9CA3AF", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 600, fontFamily: "Inter, sans-serif", cursor: ready ? "pointer" : "not-allowed", boxShadow: ready ? "0 2px 8px rgba(201,168,76,0.3)" : "none" }}
+      >
+        I agree — continue to verification
+      </button>
+    </motion.div>
+  );
+}
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 
@@ -185,8 +275,10 @@ function UploadOptions({
 
 export function VerifyPage() {
   const { t } = useLang();
+  const { user } = useAuth();
   const v = t.verifyPage;
   const [verification, setVerification] = useState<Verification | null>(null);
+  const [consented, setConsented] = useState(false);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -263,8 +355,13 @@ export function VerifyPage() {
 
           <AnimatePresence mode="wait">
 
+            {/* ── Step 0: Biometric consent (before any upload) ── */}
+            {step === 1 && !consented && !verification?.id_document_path && (
+              <BiometricConsentGate usState={user?.us_state} onConsent={() => setConsented(true)} />
+            )}
+
             {/* ── Step 1: Upload ID ── */}
-            {step === 1 && (
+            {step === 1 && (consented || !!verification?.id_document_path) && (
               <motion.div key="s1" initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.25 }} style={cardStyle}>
                 <h2 style={{ fontSize: 19, fontWeight: 700, color: "#0A0F1E", margin: "0 0 6px" }}>{v.step1.title}</h2>
                 <p style={{ fontSize: 14, color: "#6B7280", margin: "0 0 24px", lineHeight: 1.6 }}>{v.step1.desc}</p>

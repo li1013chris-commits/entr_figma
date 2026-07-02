@@ -1,9 +1,87 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { motion } from "motion/react";
-import { workerApi, type Application, type Verification } from "../../api/client";
+import { workerApi, interviewApi, type Application, type Verification, type Interview } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
+
+function formatWhen(iso: string): string {
+  return new Date(iso.includes("T") ? iso : iso + "Z").toLocaleString(undefined, {
+    weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit",
+  });
+}
+
+function InterviewsSection({ interviews, onConfirmed }: {
+  interviews: Interview[];
+  onConfirmed: (id: number, calendarCreated: boolean) => void;
+}) {
+  const [confirming, setConfirming] = useState<number | null>(null);
+  const [error, setError] = useState("");
+
+  if (interviews.length === 0) return null;
+
+  const pending   = interviews.filter((i) => !i.worker_confirmed);
+  const confirmed = interviews.filter((i) => i.worker_confirmed);
+
+  const handleConfirm = async (id: number) => {
+    setConfirming(id);
+    setError("");
+    try {
+      const res = await interviewApi.confirm(id);
+      onConfirmed(id, res.calendar_event_created);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Could not confirm interview");
+    } finally {
+      setConfirming(null);
+    }
+  };
+
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0A0F1E", margin: "0 0 12px" }}>My Interviews</h2>
+      {error && (
+        <p role="alert" style={{ fontSize: 13, color: "#DC2626", margin: "0 0 10px" }}>{error}</p>
+      )}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {pending.map((iv) => (
+          <div key={iv.id} style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#92400E", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px" }}>Please confirm this time</p>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "#0A0F1E", margin: "0 0 2px" }}>
+                {iv.title} · {iv.restaurant_name || iv.employer_name}
+              </p>
+              <p style={{ fontSize: 14, color: "#374151", margin: 0 }}>{formatWhen(iv.scheduled_at)}</p>
+            </div>
+            <button
+              onClick={() => handleConfirm(iv.id)}
+              disabled={confirming === iv.id}
+              style={{ padding: "10px 22px", fontSize: 14, fontWeight: 600, fontFamily: "Inter, sans-serif", color: "#0A0F1E", background: confirming === iv.id ? "#E5E7EB" : "#D4A853", border: "none", borderRadius: 8, cursor: confirming === iv.id ? "not-allowed" : "pointer", boxShadow: confirming === iv.id ? "none" : "0 2px 6px rgba(212,168,83,0.3)" }}
+            >
+              {confirming === iv.id ? "Confirming…" : "Confirm interview"}
+            </button>
+          </div>
+        ))}
+        {confirmed.map((iv) => (
+          <div key={iv.id} style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#DCFCE7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+            </div>
+            <div>
+              <p style={{ fontSize: 15, fontWeight: 700, color: "#0A0F1E", margin: "0 0 2px" }}>
+                {iv.title} · {iv.restaurant_name || iv.employer_name}
+              </p>
+              <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>
+                {formatWhen(iv.scheduled_at)}{iv.calendar_invite_sent ? " · On your Google Calendar" : ""}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function VerificationCard({ verification, labels }: { verification: Verification | null; labels: typeof import("../../context/LanguageContext").translations.en.workerDash.verif }) {
   const statusColors: Record<string, { bg: string; color: string; border: string }> = {
@@ -44,13 +122,30 @@ export function WorkerDashboardPage() {
   const d = t.workerDash;
   const [applications, setApplications] = useState<Application[]>([]);
   const [verification, setVerification] = useState<Verification | null>(null);
+  const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([workerApi.getApplications(), workerApi.getVerification()])
-      .then(([appsData, verData]) => { setApplications(appsData.applications); setVerification(verData.verification); })
+    Promise.all([
+      workerApi.getApplications(),
+      workerApi.getVerification(),
+      interviewApi.listWorker().catch(() => ({ interviews: [] as Interview[] })),
+    ])
+      .then(([appsData, verData, ivData]) => {
+        setApplications(appsData.applications);
+        setVerification(verData.verification);
+        setInterviews(ivData.interviews);
+      })
       .finally(() => setLoading(false));
   }, []);
+
+  const handleInterviewConfirmed = (id: number, calendarCreated: boolean) => {
+    setInterviews((prev) =>
+      prev.map((iv) => iv.id === id
+        ? { ...iv, worker_confirmed: 1, calendar_invite_sent: calendarCreated ? 1 : iv.calendar_invite_sent }
+        : iv)
+    );
+  };
 
   const statusColors: Record<string, { bg: string; color: string }> = {
     pending:  { bg: "#F3F4F6", color: "#6B7280" },
@@ -67,6 +162,8 @@ export function WorkerDashboardPage() {
       </motion.div>
 
       {!loading && <VerificationCard verification={verification} labels={d.verif} />}
+
+      {!loading && <InterviewsSection interviews={interviews} onConfirmed={handleInterviewConfirmed} />}
 
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>{d.myApplications}</h2>

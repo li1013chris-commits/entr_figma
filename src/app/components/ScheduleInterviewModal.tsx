@@ -12,6 +12,49 @@ function formatSlot(iso: string): string {
   });
 }
 
+function ExtraFields({ notes, setNotes, zoomLink, setZoomLink }: {
+  notes: string; setNotes: (v: string) => void;
+  zoomLink: string; setZoomLink: (v: string) => void;
+}) {
+  const fieldStyle: React.CSSProperties = {
+    width: "100%", padding: "10px 12px", fontSize: 14,
+    border: "1.5px solid #E5E7EB", borderRadius: 8, outline: "none",
+    fontFamily: "Inter, sans-serif", color: NAVY, boxSizing: "border-box",
+  };
+  const labelStyle: React.CSSProperties = {
+    display: "block", fontSize: 13, fontWeight: 500, color: NAVY, marginBottom: 6,
+  };
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label htmlFor="iv-zoom" style={labelStyle}>Zoom link (optional)</label>
+      <input
+        id="iv-zoom"
+        type="url"
+        value={zoomLink}
+        onChange={(e) => setZoomLink(e.target.value)}
+        placeholder="https://zoom.us/j/..."
+        style={{ ...fieldStyle, marginBottom: 12 }}
+        onFocus={(e) => (e.target.style.borderColor = GOLD)}
+        onBlur={(e) => (e.target.style.borderColor = "#E5E7EB")}
+      />
+      <label htmlFor="iv-notes" style={labelStyle}>Additional Notes (optional)</label>
+      <textarea
+        id="iv-notes"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={3}
+        placeholder="Anything the worker should know — where to go, who to ask for, what to bring…"
+        style={{ ...fieldStyle, resize: "vertical", lineHeight: 1.5 }}
+        onFocus={(e) => (e.target.style.borderColor = GOLD)}
+        onBlur={(e) => (e.target.style.borderColor = "#E5E7EB")}
+      />
+      <p style={{ fontSize: 12, color: "#9CA3AF", margin: "6px 0 0" }}>
+        These are included in the email sent to the worker.
+      </p>
+    </div>
+  );
+}
+
 interface Props {
   appId: number;
   workerName: string;
@@ -26,6 +69,8 @@ export function ScheduleInterviewModal({ appId, workerName, onClose, onScheduled
   const [oauthAvailable, setOauthAvailable] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [manualDateTime, setManualDateTime] = useState("");
+  const [notes, setNotes] = useState("");
+  const [zoomLink, setZoomLink] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<"proposed" | "scheduled" | null>(null);
@@ -57,7 +102,7 @@ export function ScheduleInterviewModal({ appId, workerName, onClose, onScheduled
     setSubmitting(true);
     setError("");
     try {
-      await interviewApi.propose(appId, selectedSlot);
+      await interviewApi.propose(appId, selectedSlot, notes.trim(), zoomLink.trim());
       setDone("proposed");
       onScheduled();
     } catch (e: unknown) {
@@ -72,7 +117,7 @@ export function ScheduleInterviewModal({ appId, workerName, onClose, onScheduled
     setSubmitting(true);
     setError("");
     try {
-      await interviewApi.scheduleDirect(appId, new Date(manualDateTime).toISOString());
+      await interviewApi.scheduleDirect(appId, new Date(manualDateTime).toISOString(), notes.trim(), zoomLink.trim());
       setDone("scheduled");
       onScheduled();
     } catch (e: unknown) {
@@ -175,6 +220,7 @@ export function ScheduleInterviewModal({ appId, workerName, onClose, onScheduled
                     </button>
                   ))}
                 </div>
+                <ExtraFields notes={notes} setNotes={setNotes} zoomLink={zoomLink} setZoomLink={setZoomLink} />
                 <button
                   onClick={proposeSlot}
                   disabled={!selectedSlot || submitting}
@@ -214,6 +260,7 @@ export function ScheduleInterviewModal({ appId, workerName, onClose, onScheduled
                   onFocus={(e) => (e.target.style.borderColor = GOLD)}
                   onBlur={(e) => (e.target.style.borderColor = "#E5E7EB")}
                 />
+                <ExtraFields notes={notes} setNotes={setNotes} zoomLink={zoomLink} setZoomLink={setZoomLink} />
                 <button
                   onClick={scheduleManual}
                   disabled={submitting}

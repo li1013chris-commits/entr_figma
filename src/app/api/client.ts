@@ -390,16 +390,16 @@ export const interviewApi = {
   suggestSlots: (appId: number) =>
     request<SlotSuggestion>(`/api/employer/applications/${appId}/suggest-slots`),
 
-  propose: (appId: number, scheduledAt: string) =>
+  propose: (appId: number, scheduledAt: string, notes = "", zoomLink = "") =>
     request<{ interview: Interview }>(
       `/api/employer/applications/${appId}/propose-interview`,
-      json({ scheduled_at: scheduledAt })
+      json({ scheduled_at: scheduledAt, notes, zoom_link: zoomLink })
     ),
 
-  scheduleDirect: (appId: number, scheduledAt: string) =>
+  scheduleDirect: (appId: number, scheduledAt: string, notes = "", zoomLink = "") =>
     request<{ interview: Interview }>(
       `/api/employer/applications/${appId}/schedule-interview`,
-      json({ scheduled_at: scheduledAt })
+      json({ scheduled_at: scheduledAt, notes, zoom_link: zoomLink })
     ),
 
   confirm: (interviewId: number) =>

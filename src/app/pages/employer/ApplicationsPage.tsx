@@ -6,23 +6,6 @@ import { ScheduleInterviewModal } from "../../components/ScheduleInterviewModal"
 
 // ── Sub-components ─────────────────────────────────────────────────────────────
 
-function FitScoreBar({ score, notScored }: { score: number | null; notScored: string }) {
-  if (score === null) return <span style={{ color: "#9CA3AF", fontSize: 13 }}>{notScored}</span>;
-  const color = score >= 70 ? "#16A34A" : score >= 40 ? "#D97706" : "#DC2626";
-  const bg    = score >= 70 ? "#DCFCE7" : score >= 40 ? "#FEF3C7" : "#FEF2F2";
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 15, fontWeight: 700, color, background: bg, padding: "2px 8px", borderRadius: 20 }}>{score}</span>
-        <span style={{ fontSize: 12, color: "#9CA3AF" }}>/ 100</span>
-      </div>
-      <div style={{ height: 5, background: "#F3F4F6", borderRadius: 99, overflow: "hidden", width: 110 }}>
-        <div style={{ height: "100%", width: `${score}%`, background: color, borderRadius: 99 }} />
-      </div>
-    </div>
-  );
-}
-
 function VerifBadge({ status }: { status: string | null | undefined }) {
   const map: Record<string, { bg: string; color: string; label: string }> = {
     verified: { bg: "#DCFCE7", color: "#16A34A", label: "Verified" },
@@ -34,10 +17,14 @@ function VerifBadge({ status }: { status: string | null | undefined }) {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "#6B7280", reviewed: "#2563EB", accepted: "#16A34A", rejected: "#DC2626",
-  hired: "#7C3AED", interview_scheduled: "#D4A853",
+  pending: "#6B7280", accepted: "#16A34A", rejected: "#DC2626",
+  interview_scheduled: "#D4A853",
 };
-const ALL_STATUSES = ["pending", "reviewed", "accepted", "rejected", "hired"] as const;
+const STATUS_OPTIONS = [
+  { value: "pending",  label: "Pending" },
+  { value: "accepted", label: "Accepted" },
+  { value: "rejected", label: "Declined" },
+] as const;
 
 function StatusDropdown({ appId, currentStatus, onUpdate }: {
   appId: number; currentStatus: string; onUpdate: (id: number, s: string) => void;
@@ -51,8 +38,13 @@ function StatusDropdown({ appId, currentStatus, onUpdate }: {
   return (
     <select value={currentStatus} onChange={handleChange} disabled={updating}
       style={{ fontSize: 12, fontWeight: 600, color: STATUS_COLORS[currentStatus] || "#6B7280", border: "1.5px solid #E5E7EB", borderRadius: 6, padding: "4px 8px", background: "#fff", fontFamily: "Inter, sans-serif", cursor: updating ? "not-allowed" : "pointer", outline: "none", opacity: updating ? 0.6 : 1 }}>
-      {ALL_STATUSES.map((s) => (
-        <option key={s} value={s} style={{ color: STATUS_COLORS[s] }}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+      {!STATUS_OPTIONS.some((o) => o.value === currentStatus) && (
+        <option value={currentStatus} disabled>
+          {currentStatus === "interview_scheduled" ? "Interview scheduled" : currentStatus.charAt(0).toUpperCase() + currentStatus.slice(1)}
+        </option>
+      )}
+      {STATUS_OPTIONS.map((o) => (
+        <option key={o.value} value={o.value} style={{ color: STATUS_COLORS[o.value] }}>{o.label}</option>
       ))}
     </select>
   );
@@ -109,7 +101,7 @@ function ReferButton({ app, employerVerified, onReferred }: {
   const [error, setError]     = useState("");
   const [done, setDone]       = useState(app.already_referred ?? false);
 
-  if (app.status !== "hired") return null;
+  if (app.status !== "hired" && app.status !== "accepted") return null;
 
   if (done) {
     return (
@@ -223,15 +215,17 @@ export function ApplicationsPage() {
     <div>
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 28 }}>
         <button onClick={() => navigate("/employer/dashboard")}
-          style={{ background: "none", border: "none", color: "#C9A84C", fontSize: 13, fontWeight: 500, cursor: "pointer", padding: "0 0 8px", fontFamily: "Inter, sans-serif" }}>
+          style={{ background: "none", border: "none", color: "#0A0F1E", fontSize: 13, fontWeight: 400, cursor: "pointer", padding: "0 0 8px", fontFamily: "Inter, sans-serif", textDecoration: "none" }}
+          onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.textDecoration = "underline")}
+          onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.textDecoration = "none")}>
           Back to Dashboard
         </button>
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div>
-            <p style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 4px" }}>Applications</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: "#0A0F1E", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 4px" }}>Applications</p>
             <h1 style={{ fontSize: 26, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>{job.title}</h1>
             <p style={{ fontSize: 14, color: "#6B7280", margin: "4px 0 0" }}>
-              {applications.length} application{applications.length !== 1 ? "s" : ""} &middot; Sorted by match score
+              {applications.length} application{applications.length !== 1 ? "s" : ""}
             </p>
           </div>
           {!employerVerified && (
@@ -269,7 +263,6 @@ export function ApplicationsPage() {
                   {app.phone && <span style={{ fontSize: 13, color: "#6B7280" }}> &middot; {app.phone}</span>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <FitScoreBar score={app.ai_score ?? null} notScored="Not scored" />
                   <StatusDropdown appId={app.id} currentStatus={app.status} onUpdate={handleStatusUpdate} />
                   {(app.status as string) === "interview_scheduled" ? (
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 600, color: "#92400E", background: "#FFFBEB", border: "1px solid #FDE68A", borderRadius: 7, padding: "5px 10px" }}>
@@ -295,18 +288,10 @@ export function ApplicationsPage() {
                 </div>
               </div>
 
-              {/* AI summary */}
-              {app.ai_summary && (
-                <div style={{ background: "#F7F7F5", border: "1px solid #E5E7EB", borderRadius: 8, padding: "11px 13px", marginBottom: 12 }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 3px" }}>AI Summary</p>
-                  <p style={{ fontSize: 13, color: "#374151", margin: 0, lineHeight: 1.5 }}>{app.ai_summary}</p>
-                </div>
-              )}
-
               {/* Cover letter */}
               {app.cover_letter && (
                 <div style={{ marginBottom: 10 }}>
-                  <p style={{ fontSize: 11, fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 3px" }}>Cover Letter</p>
+                  <p style={{ fontSize: 11, fontWeight: 600, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 3px" }}>Letter from Worker</p>
                   <p style={{ fontSize: 13, color: "#374151", margin: 0, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{app.cover_letter}</p>
                 </div>
               )}

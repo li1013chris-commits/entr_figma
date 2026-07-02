@@ -2,57 +2,75 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { employerApi } from "../../api/client";
-import { useLang } from "../../context/LanguageContext";
 
-const SKILLS = ["grill", "fryer", "prep_cook", "dishwasher", "server", "cashier"];
+const PAY_TYPES = [
+  { value: "per_hour",    label: "Per Hour" },
+  { value: "per_day",     label: "Per Day" },
+  { value: "per_week",    label: "Per Week" },
+  { value: "biweekly",    label: "Biweekly" },
+  { value: "per_month",   label: "Per Month" },
+  { value: "salary_year", label: "Salary (yearly)" },
+];
 
-const SKILL_LABELS: Record<string, Record<string, string>> = {
-  grill: { en: "Grill cooking", es: "Cocina a la parrilla", zh: "烤架烹饪", fr: "Cuisson au grill", pt: "Cozimento em grelha", vi: "Nướng trên vỉ" },
-  fryer: { en: "Deep fryer", es: "Freidora", zh: "油炸锅", fr: "Friteuse", pt: "Fritadeira", vi: "Chiên sâu" },
-  prep_cook: { en: "Food prep", es: "Preparación de alimentos", zh: "食物准备", fr: "Préparation des aliments", pt: "Preparação de comida", vi: "Chuẩn bị thực phẩm" },
-  dishwasher: { en: "Dishwashing", es: "Lavado de platos", zh: "洗碗", fr: "Vaisselle", pt: "Lavagem de louça", vi: "Rửa bát" },
-  server: { en: "Serving customers", es: "Servir a clientes", zh: "服务顾客", fr: "Service à la clientèle", pt: "Servir clientes", vi: "Phục vụ khách" },
-  cashier: { en: "Cash register", es: "Caja registradora", zh: "收银机", fr: "Caisse", pt: "Caixa registradora", vi: "Máy tính tiền" },
-};
+const HOURS_OPTIONS = [
+  { value: "full_time",     label: "Full-time (35–40 hrs/wk)" },
+  { value: "part_time",     label: "Part-time (15–25 hrs/wk)" },
+  { value: "weekends_only", label: "Weekends Only" },
+  { value: "flexible",      label: "Flexible" },
+  { value: "on_call",       label: "On-call" },
+];
+
+const CONTACT_FIELDS = [
+  { key: "contact_phone",    label: "Phone number",        placeholder: "e.g. (336) 555-0142" },
+  { key: "contact_whatsapp", label: "WhatsApp",            placeholder: "e.g. +1 336 555 0142" },
+  { key: "contact_wechat",   label: "WeChat",              placeholder: "WeChat ID" },
+  { key: "contact_line",     label: "Line",                placeholder: "Line ID" },
+  { key: "contact_gchat",    label: "Google Chat / Gmail", placeholder: "you@gmail.com" },
+] as const;
 
 export function PostJobPage() {
   const navigate = useNavigate();
-  const { t, currentLang } = useLang();
-  const p = t.postJob;
 
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [pay, setPay] = useState("");
+  const [payAmount, setPayAmount] = useState("");
+  const [payType, setPayType] = useState("per_hour");
+  const [tipsIncluded, setTipsIncluded] = useState(false);
   const [hours, setHours] = useState("");
   const [experienceRequired, setExperienceRequired] = useState(0);
-  const [languagePreference, setLanguagePreference] = useState("");
   const [location, setLocation] = useState("");
-  const [requiredSkills, setRequiredSkills] = useState<string[]>([]);
-  const [requiresFoodSafety, setRequiresFoodSafety] = useState(false);
+  const [skillsText, setSkillsText] = useState("");
+  const [additionalInfo, setAdditionalInfo] = useState("");
+  const [contacts, setContacts] = useState<Record<string, string>>({
+    contact_phone: "", contact_whatsapp: "", contact_wechat: "",
+    contact_line: "", contact_gchat: "",
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSkillToggle = (skill: string) => {
-    setRequiredSkills((prev) =>
-      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
-    );
-  };
+  const hasContact = Object.values(contacts).some((v) => v.trim());
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    if (!hours) { setError("Please choose the hours for this job."); return; }
+    if (!hasContact) { setError("Please add at least one contact method so workers can reach you."); return; }
     setLoading(true);
     try {
       await employerApi.createJob({
         title,
-        description,
-        pay,
+        pay_amount: payAmount,
+        pay_type: payType,
+        tips_included: tipsIncluded,
         hours,
         experience_required: experienceRequired,
-        language_preference: languagePreference,
         location,
-        required_skills: requiredSkills.join(","),
-        requires_food_safety: requiresFoodSafety,
+        skills_text: skillsText,
+        additional_info: additionalInfo,
+        contact_phone: contacts.contact_phone.trim(),
+        contact_whatsapp: contacts.contact_whatsapp.trim(),
+        contact_wechat: contacts.contact_wechat.trim(),
+        contact_line: contacts.contact_line.trim(),
+        contact_gchat: contacts.contact_gchat.trim(),
       });
       navigate("/employer/dashboard");
     } catch (err: unknown) {
@@ -74,6 +92,15 @@ export function PostJobPage() {
     background: "#fff",
     boxSizing: "border-box",
   };
+  const selectStyle: React.CSSProperties = {
+    ...inputStyle,
+    appearance: "none",
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: "right 10px center",
+    backgroundSize: "16px",
+    paddingRight: 36,
+  };
   const labelStyle: React.CSSProperties = {
     display: "block",
     fontSize: 13,
@@ -81,22 +108,20 @@ export function PostJobPage() {
     color: "#0A0F1E",
     marginBottom: 6,
   };
+  const sectionTitleStyle: React.CSSProperties = {
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#0A0F1E",
+    margin: "4px 0 0",
+    paddingTop: 16,
+    borderTop: "1px solid #F3F4F6",
+  };
   const focus = (
-    e: React.FocusEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => (e.target.style.borderColor = "#C9A84C");
   const blur = (
-    e: React.FocusEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => (e.target.style.borderColor = "#E5E7EB");
-
-  const getSkillLabel = (skill: string): string => {
-    const label = SKILL_LABELS[skill];
-    if (!label) return skill;
-    return label[currentLang] || label.en;
-  };
 
   return (
     <div style={{ maxWidth: 650, margin: "0 auto" }}>
@@ -115,13 +140,13 @@ export function PostJobPage() {
             margin: "0 0 6px",
           }}
         >
-          {p.label}
+          New Listing
         </p>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>
-          {p.title}
+          Post a Job
         </h1>
         <p style={{ fontSize: 14, color: "#6B7280", margin: "6px 0 0" }}>
-          {p.subtitle}
+          Tell workers about the job. Simple and clear works best.
         </p>
       </motion.div>
 
@@ -139,6 +164,7 @@ export function PostJobPage() {
       >
         {error && (
           <div
+            role="alert"
             style={{
               background: "#FEF2F2",
               border: "1px solid #FECACA",
@@ -157,72 +183,130 @@ export function PostJobPage() {
           onSubmit={handleSubmit}
           style={{ display: "flex", flexDirection: "column", gap: 20 }}
         >
+          {/* Position */}
           <div>
-            <label style={labelStyle}>
-              {p.titleField} <span style={{ color: "#DC2626" }}>*</span>
+            <label htmlFor="job-title" style={labelStyle}>
+              Position <span style={{ color: "#DC2626" }}>*</span>
             </label>
             <input
+              id="job-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder={p.titlePlaceholder}
+              placeholder="e.g. Line Cook, Server, Dishwasher"
               style={inputStyle}
               onFocus={focus}
               onBlur={blur}
             />
           </div>
 
+          {/* Pay */}
           <div>
-            <label style={labelStyle}>{p.description}</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              placeholder={p.descPlaceholder}
-              style={{ ...inputStyle, resize: "vertical", lineHeight: "1.5" }}
+            <label htmlFor="job-pay" style={labelStyle}>
+              Pay <span style={{ color: "#DC2626" }}>*</span>
+            </label>
+            <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: "absolute", left: 12, top: "50%",
+                    transform: "translateY(-50%)",
+                    fontSize: 14, fontWeight: 600, color: "#6B7280",
+                  }}
+                >
+                  $
+                </span>
+                <input
+                  id="job-pay"
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.01"
+                  value={payAmount}
+                  onChange={(e) => setPayAmount(e.target.value)}
+                  required
+                  placeholder="18"
+                  style={{ ...inputStyle, paddingLeft: 26 }}
+                  onFocus={focus}
+                  onBlur={blur}
+                />
+              </div>
+              <select
+                aria-label="Pay period"
+                value={payType}
+                onChange={(e) => setPayType(e.target.value)}
+                style={{ ...selectStyle, flex: 1 }}
+                onFocus={focus}
+                onBlur={blur}
+              >
+                {PAY_TYPES.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tips toggle */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+              <span style={{ fontSize: 13, fontWeight: 500, color: "#0A0F1E" }}>
+                Tips included?
+              </span>
+              <div style={{ display: "flex", gap: 8 }} role="radiogroup" aria-label="Tips included">
+                {[{ v: true, l: "Yes" }, { v: false, l: "No" }].map(({ v, l }) => (
+                  <button
+                    key={l}
+                    type="button"
+                    role="radio"
+                    aria-checked={tipsIncluded === v}
+                    onClick={() => setTipsIncluded(v)}
+                    style={{
+                      padding: "6px 18px",
+                      fontSize: 13,
+                      fontWeight: tipsIncluded === v ? 600 : 400,
+                      fontFamily: "Inter, sans-serif",
+                      color: tipsIncluded === v ? "#0A0F1E" : "#6B7280",
+                      background: tipsIncluded === v ? "#FEF3C7" : "#fff",
+                      border: `1.5px solid ${tipsIncluded === v ? "#C9A84C" : "#E5E7EB"}`,
+                      borderRadius: 8,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Hours */}
+          <div>
+            <label htmlFor="job-hours" style={labelStyle}>
+              Hours <span style={{ color: "#DC2626" }}>*</span>
+            </label>
+            <select
+              id="job-hours"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              required
+              style={selectStyle}
               onFocus={focus}
               onBlur={blur}
-            />
+            >
+              <option value="" disabled>Choose hours…</option>
+              {HOURS_OPTIONS.map((h) => (
+                <option key={h.value} value={h.value}>{h.label}</option>
+              ))}
+            </select>
           </div>
 
+          {/* Experience + Location */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
-              <label style={labelStyle}>
-                {p.pay} <span style={{ color: "#DC2626" }}>*</span>
-              </label>
+              <label htmlFor="job-exp" style={labelStyle}>Years of experience needed</label>
               <input
-                type="text"
-                value={pay}
-                onChange={(e) => setPay(e.target.value)}
-                required
-                placeholder={p.payPlaceholder}
-                style={inputStyle}
-                onFocus={focus}
-                onBlur={blur}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>
-                {p.hours} <span style={{ color: "#DC2626" }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={hours}
-                onChange={(e) => setHours(e.target.value)}
-                required
-                placeholder={p.hoursPlaceholder}
-                style={inputStyle}
-                onFocus={focus}
-                onBlur={blur}
-              />
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div>
-              <label style={labelStyle}>{p.experience}</label>
-              <input
+                id="job-exp"
                 type="number"
                 value={experienceRequired}
                 onChange={(e) => setExperienceRequired(Number(e.target.value))}
@@ -234,133 +318,76 @@ export function PostJobPage() {
               />
             </div>
             <div>
-              <label style={labelStyle}>{p.langPref}</label>
-              <select
-                value={languagePreference}
-                onChange={(e) => setLanguagePreference(e.target.value)}
-                style={{
-                  ...inputStyle,
-                  appearance: "none",
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 10px center",
-                  backgroundSize: "16px",
-                  paddingRight: 36,
-                }}
+              <label htmlFor="job-location" style={labelStyle}>Location</label>
+              <input
+                id="job-location"
+                type="text"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="e.g. Greensboro, NC"
+                style={inputStyle}
                 onFocus={focus}
                 onBlur={blur}
-              >
-                <option value="">{p.langAny}</option>
-                <option value="en">English</option>
-                <option value="zh">中文 (普通话)</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
-                <option value="pt">Português</option>
-                <option value="vi">Tiếng Việt</option>
-              </select>
+              />
             </div>
           </div>
 
+          {/* Skills needed (free text — replaces the old checkboxes) */}
           <div>
-            <label style={labelStyle}>{p.location}</label>
-            <input
-              type="text"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-              placeholder={p.locationPlaceholder}
-              style={inputStyle}
+            <label htmlFor="job-skills" style={labelStyle}>Skills needed (optional)</label>
+            <textarea
+              id="job-skills"
+              value={skillsText}
+              onChange={(e) => setSkillsText(e.target.value)}
+              rows={3}
+              placeholder="e.g. Wok cooking, food prep, works well under pressure"
+              style={{ ...inputStyle, resize: "vertical", lineHeight: "1.5" }}
               onFocus={focus}
               onBlur={blur}
             />
           </div>
 
-          {/* Required Skills */}
+          {/* Contact information */}
           <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: 13,
-                fontWeight: 500,
-                color: "#0A0F1E",
-                marginBottom: 12,
-              }}
-            >
-              {currentLang === "es"
-                ? "Habilidades requeridas"
-                : currentLang === "zh"
-                  ? "所需技能"
-                  : "Skills you need"}
-            </label>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 12,
-              }}
-            >
-              {SKILLS.map((skill) => (
-                <label
-                  key={skill}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    cursor: "pointer",
-                    padding: 8,
-                    borderRadius: 6,
-                    background: requiredSkills.includes(skill)
-                      ? "#FEF3C7"
-                      : "transparent",
-                  }}
-                >
+            <h2 style={sectionTitleStyle}>Contact Information</h2>
+            <p style={{ fontSize: 13, color: "#6B7280", margin: "4px 0 14px" }}>
+              How can workers reach you? Fill in at least one.{" "}
+              <span style={{ color: "#DC2626" }}>*</span>
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              {CONTACT_FIELDS.map((f) => (
+                <div key={f.key}>
+                  <label htmlFor={`job-${f.key}`} style={labelStyle}>{f.label}</label>
                   <input
-                    type="checkbox"
-                    checked={requiredSkills.includes(skill)}
-                    onChange={() => handleSkillToggle(skill)}
-                    style={{
-                      width: 18,
-                      height: 18,
-                      cursor: "pointer",
-                      accentColor: "#C9A84C",
-                    }}
+                    id={`job-${f.key}`}
+                    type="text"
+                    value={contacts[f.key]}
+                    onChange={(e) =>
+                      setContacts((prev) => ({ ...prev, [f.key]: e.target.value }))
+                    }
+                    placeholder={f.placeholder}
+                    style={inputStyle}
+                    onFocus={focus}
+                    onBlur={blur}
                   />
-                  <span style={{ fontSize: 13 }}>{getSkillLabel(skill)}</span>
-                </label>
+                </div>
               ))}
             </div>
           </div>
 
-          {/* Food Safety Certification */}
+          {/* Additional information */}
           <div>
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                cursor: "pointer",
-                padding: 8,
-                borderRadius: 6,
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={requiresFoodSafety}
-                onChange={(e) => setRequiresFoodSafety(e.target.checked)}
-                style={{
-                  width: 18,
-                  height: 18,
-                  cursor: "pointer",
-                  accentColor: "#C9A84C",
-                }}
-              />
-              <span style={{ fontSize: 13 }}>
-                {currentLang === "es"
-                  ? "Se requiere certificado de seguridad alimentaria"
-                  : currentLang === "zh"
-                    ? "需要食品安全认证"
-                    : "Food safety certified required"}
-              </span>
-            </label>
+            <label htmlFor="job-info" style={labelStyle}>Additional Information (optional)</label>
+            <textarea
+              id="job-info"
+              value={additionalInfo}
+              onChange={(e) => setAdditionalInfo(e.target.value)}
+              rows={4}
+              placeholder="Anything else workers should know — schedule details, meals, parking, how to prepare…"
+              style={{ ...inputStyle, resize: "vertical", lineHeight: "1.5" }}
+              onFocus={focus}
+              onBlur={blur}
+            />
           </div>
 
           <div style={{ display: "flex", gap: 12, paddingTop: 4 }}>
@@ -385,7 +412,7 @@ export function PostJobPage() {
                   : "0 2px 8px rgba(201,168,76,0.3)",
               }}
             >
-              {loading ? p.submitting : p.submit}
+              {loading ? "Posting…" : "Post Job"}
             </motion.button>
             <button
               type="button"
@@ -402,7 +429,7 @@ export function PostJobPage() {
                 cursor: "pointer",
               }}
             >
-              {p.cancel}
+              Cancel
             </button>
           </div>
         </form>

@@ -65,9 +65,20 @@ export interface Job {
   application_count?: number;
   employer_name?: string;
   restaurant_name?: string;
-  // Structured job requirements
-  required_skills: string | null;
-  requires_food_safety: boolean;
+  // Structured pay (Step 2)
+  pay_amount?: string | null;
+  pay_type?: string | null;
+  tips_included?: number;
+  skills_text?: string | null;
+  additional_info?: string | null;
+  // Contact methods (Step 3)
+  contact_phone?: string | null;
+  contact_whatsapp?: string | null;
+  contact_wechat?: string | null;
+  contact_line?: string | null;
+  contact_gchat?: string | null;
+  // Location search
+  distance_miles?: number;
 }
 
 export interface Application {
@@ -179,14 +190,19 @@ export const employerApi = {
 
   createJob: (body: {
     title: string;
-    description: string;
-    pay: string;
+    pay_amount: string;
+    pay_type: string;
+    tips_included: boolean;
     hours: string;
     experience_required: number;
-    language_preference: string;
     location: string;
-    required_skills?: string;
-    requires_food_safety?: boolean;
+    skills_text?: string;
+    additional_info?: string;
+    contact_phone?: string;
+    contact_whatsapp?: string;
+    contact_wechat?: string;
+    contact_line?: string;
+    contact_gchat?: string;
   }) => request<{ job: Job }>("/api/employer/jobs", json(body)),
 
   toggleJob: (jobId: number) =>

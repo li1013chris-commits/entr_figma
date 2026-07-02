@@ -228,7 +228,7 @@ export function ApplicationsPage() {
             <p style={{ fontSize: 11, fontWeight: 600, color: "#C9A84C", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 4px" }}>Applications</p>
             <h1 style={{ fontSize: 26, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>{job.title}</h1>
             <p style={{ fontSize: 14, color: "#6B7280", margin: "4px 0 0" }}>
-              {applications.length} application{applications.length !== 1 ? "s" : ""} &middot; {t.applications.sortedByScore}
+              {applications.length} application{applications.length !== 1 ? "s" : ""} &middot; Sorted by match score
             </p>
           </div>
           {!employerVerified && (
@@ -266,7 +266,7 @@ export function ApplicationsPage() {
                   {app.phone && <span style={{ fontSize: 13, color: "#6B7280" }}> &middot; {app.phone}</span>}
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <FitScoreBar score={app.ai_score ?? null} notScored={t.applications.notScored} />
+                  <FitScoreBar score={app.ai_score ?? null} notScored="Not scored" />
                   <StatusDropdown appId={app.id} currentStatus={app.status} onUpdate={handleStatusUpdate} />
                   <ReferButton app={app} employerVerified={employerVerified} onReferred={handleReferred} />
                 </div>

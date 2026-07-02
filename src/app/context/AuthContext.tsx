@@ -24,6 +24,24 @@ const AuthContext = createContext<AuthContextValue>({
   logout: async () => {},
 });
 
+// Only non-sensitive display fields are cached in localStorage; the session
+// itself lives in an HttpOnly cookie and the full profile stays server-side.
+function cacheUser(user: User | null) {
+  if (!user) {
+    localStorage.removeItem("entr_user");
+    return;
+  }
+  const minimal = {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    language_pref: user.language_pref,
+    restaurant_name: user.restaurant_name,
+  };
+  localStorage.setItem("entr_user", JSON.stringify(minimal));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
     const stored = localStorage.getItem("entr_user");
@@ -35,14 +53,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await authApi.me();
       setUser(data.user);
-      if (data.user) {
-        localStorage.setItem("entr_user", JSON.stringify(data.user));
-      } else {
-        localStorage.removeItem("entr_user");
-      }
+      cacheUser(data.user);
     } catch {
       setUser(null);
-      localStorage.removeItem("entr_user");
+      cacheUser(null);
     } finally {
       setLoading(false);
     }
@@ -55,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string): Promise<User> => {
     const data = await authApi.login({ email, password });
     setUser(data.user);
-    localStorage.setItem("entr_user", JSON.stringify(data.user));
+    cacheUser(data.user);
     return data.user;
   }, []);
 

@@ -103,7 +103,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
           {/* Right: user info + language (workers only) + logout */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            {user?.role === "worker" && <LanguageDropdown />}
+            {user?.role === "worker" && <LanguageDropdown compact />}
 
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#0A0F1E" }}>{user?.name}</div>

@@ -3,12 +3,12 @@ import { motion, AnimatePresence } from "motion/react";
 import { useLang, type Lang } from "../context/LanguageContext";
 
 const LANGUAGES = [
-  { code: "en" as Lang, native: "English", available: true },
-  { code: "zh" as Lang, native: "中文", available: true },
-  { code: "es" as Lang, native: "Español", available: true },
-  { code: "fr" as Lang, native: "Français", available: true },
-  { code: "pt" as Lang, native: "Português", available: true },
-  { code: "vi" as Lang, native: "Tiếng Việt", available: true },
+  { code: "en" as Lang, native: "English", short: "EN", available: true },
+  { code: "zh" as Lang, native: "中文", short: "中文", available: true },
+  { code: "es" as Lang, native: "Español", short: "ES", available: true },
+  { code: "fr" as Lang, native: "Français", short: "FR", available: true },
+  { code: "pt" as Lang, native: "Português", short: "PT", available: true },
+  { code: "vi" as Lang, native: "Tiếng Việt", short: "VI", available: true },
 ] as const;
 
 const DIALECT_LABELS: Record<string, string> = {
@@ -22,9 +22,11 @@ const DIALECT_LABELS: Record<string, string> = {
 
 interface Props {
   variant?: "light" | "dark";
+  /** Show only the 2-letter code (EN, 中文, …) in the trigger button */
+  compact?: boolean;
 }
 
-export function LanguageDropdown({ variant = "dark" }: Props) {
+export function LanguageDropdown({ variant = "dark", compact = false }: Props) {
   const { lang, setLang, dialect, setDialect, languageFamilies } = useLang();
   const [open, setOpen] = useState(false);
   const [showDialects, setShowDialects] = useState(false);
@@ -89,8 +91,8 @@ export function LanguageDropdown({ variant = "dark" }: Props) {
           />
         </svg>
         <span>
-          {current.native}
-          {dialectLabel && ` (${dialectLabel.split(" ")[0]})`}
+          {compact ? current.short : current.native}
+          {!compact && dialectLabel && ` (${dialectLabel.split(" ")[0]})`}
         </span>
         <motion.svg
           animate={{ rotate: open ? 180 : 0 }}

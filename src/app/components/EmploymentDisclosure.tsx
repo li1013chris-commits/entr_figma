@@ -1,4 +1,7 @@
+import { useLang } from "../context/LanguageContext";
+
 export function EmploymentDisclosure({ style = {} }: { style?: React.CSSProperties }) {
+  const { t } = useLang();
   return (
     <p
       style={{
@@ -11,8 +14,7 @@ export function EmploymentDisclosure({ style = {} }: { style?: React.CSSProperti
         ...style,
       }}
     >
-      ENTR is a hiring platform and is not the employer. All employment decisions
-      are made by the restaurant owner.
+      {t.app.disclosure}
     </p>
   );
 }

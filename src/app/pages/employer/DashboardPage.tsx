@@ -6,6 +6,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
 import { ShareModal } from "../../components/ShareModal";
 import { EmploymentDisclosure } from "../../components/EmploymentDisclosure";
+import { NotificationBadge } from "../../components/NotificationBadge";
+import { unseenForJob } from "../../utils/notifications";
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
@@ -21,6 +23,7 @@ export function EmployerDashboardPage() {
   const { user } = useAuth();
   const { t } = useLang();
   const d = t.employerDash;
+  const x = t.app.dash;
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<number | null>(null);
@@ -95,7 +98,7 @@ export function EmployerDashboardPage() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ background: "#F9FAFB" }}>
-                  {[d.cols.title, d.cols.location, d.cols.pay, d.cols.applications, d.cols.status, "Expires", d.cols.actions].map((h) => (
+                  {[d.cols.title, d.cols.location, d.cols.pay, d.cols.applications, d.cols.status, x.expires, d.cols.actions].map((h) => (
                     <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 11, fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: "1px solid #E5E7EB" }}>{h}</th>
                   ))}
                 </tr>
@@ -124,29 +127,32 @@ export function EmployerDashboardPage() {
                         const color = days <= 3 ? "#DC2626" : days <= 7 ? "#D97706" : "#16A34A";
                         return (
                           <span style={{ background: bg, color, fontSize: 11, fontWeight: 600, padding: "3px 8px", borderRadius: 20, whiteSpace: "nowrap" }}>
-                            {days <= 0 ? "Expired" : `${days}d left`}
+                            {days <= 0 ? x.expired : `${days}${x.daysLeft}`}
                           </span>
                         );
                       })()}
                     </td>
                     <td style={{ padding: "14px 16px" }}>
                       <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                        <Link to={`/employer/jobs/${job.id}/applications`}
-                          style={{ fontSize: 12, fontWeight: 500, color: "#0A0F1E", background: "transparent", border: "1.5px solid #0A0F1E", textDecoration: "none", padding: "5px 10px", borderRadius: 6, whiteSpace: "nowrap" }}>
-                          {d.viewApps}
-                        </Link>
+                        <span style={{ position: "relative", display: "inline-flex" }}>
+                          <Link to={`/employer/jobs/${job.id}/applications`}
+                            style={{ fontSize: 12, fontWeight: 500, color: "#0A0F1E", background: "transparent", border: "1.5px solid #0A0F1E", textDecoration: "none", padding: "5px 10px", borderRadius: 6, whiteSpace: "nowrap" }}>
+                            {d.viewApps}
+                          </Link>
+                          {user && <NotificationBadge count={unseenForJob(user.id, job.id, job.application_count ?? 0)} />}
+                        </span>
                         <button onClick={() => setShareJob(job)}
                           style={{ fontSize: 12, fontWeight: 600, color: "#0A0F1E", background: "#C9A84C", border: "none", padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4, boxShadow: "0 1px 4px rgba(201,168,76,0.35)" }}>
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                             <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
                           </svg>
-                          Share
+                          {x.share}
                         </button>
                         {job.expires_at && getDaysLeft(job.expires_at) !== null && getDaysLeft(job.expires_at)! <= 7 && (
                           <button onClick={() => handleRenew(job.id)} disabled={renewing === job.id}
                             style={{ fontSize: 12, fontWeight: 500, color: "#C9A84C", background: "transparent", border: "1.5px solid #C9A84C", padding: "5px 10px", borderRadius: 6, cursor: renewing === job.id ? "not-allowed" : "pointer", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap", opacity: renewing === job.id ? 0.6 : 1 }}>
-                            {renewing === job.id ? "…" : "Renew"}
+                            {renewing === job.id ? "…" : x.renew}
                           </button>
                         )}
                         <button onClick={() => handleToggle(job.id)} disabled={toggling === job.id}

@@ -1,17 +1,18 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { buddyApi, type BuddyTurn } from "../api/client";
+import { useLang, LANGUAGE_NAMES } from "../context/LanguageContext";
 
 /**
  * Buddy — ENTR's floating help chatbot.
  * Appears on every page. Stateless: the conversation lives only while the
  * window is open and is wiped completely when it closes.
+ * Buddy speaks the language chosen in the app's language selector
+ * (English by default) — it never asks which language to use.
  */
 
 const NAVY = "#0A0F1E";
 const GOLD = "#D4A853";
-
-const WELCOME = "👋 Hi! I'm Buddy. What language do you prefer? / 你想用什么语言？/ ¿Qué idioma prefieres?";
 
 interface Message {
   role: "user" | "assistant";
@@ -20,12 +21,16 @@ interface Message {
 }
 
 export function Buddy() {
+  const { lang, t } = useLang();
+  const b = t.app.buddy;
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const uiLanguage = LANGUAGE_NAMES[lang] ?? LANGUAGE_NAMES.en;
 
   // Opening starts a fresh session; closing wipes everything.
   const toggle = () => {
@@ -36,7 +41,7 @@ export function Buddy() {
       setTyping(false);
     } else {
       setOpen(true);
-      setMessages([{ role: "assistant", text: WELCOME }]);
+      setMessages([{ role: "assistant", text: b.welcome }]);
     }
   };
 
@@ -52,23 +57,32 @@ export function Buddy() {
     const text = raw.trim();
     if (!text || typing) return;
 
-    // Session-only history for the stateless backend (skip the local welcome line)
-    const history: BuddyTurn[] = messages
-      .filter((m) => !m.error && m.text !== WELCOME)
-      .map((m) => ({ role: m.role, content: m.text }));
+    // Session-only history for the stateless backend (skip the local welcome line).
+    // A leading hidden turn tells Buddy which language the app is set to, so it
+    // answers in that language automatically without asking.
+    const history: BuddyTurn[] = [
+      {
+        role: "user",
+        content: `(The app language selector is set to ${uiLanguage}. Always reply in that language unless I clearly write in a different one.)`,
+      },
+      { role: "assistant", content: "Understood." },
+      ...messages
+        .filter((m) => !m.error && m.text !== b.welcome)
+        .map((m): BuddyTurn => ({ role: m.role, content: m.text })),
+    ];
 
     setMessages((prev) => [...prev, { role: "user", text }]);
     setInput("");
     setTyping(true);
     try {
-      const res = await buddyApi.send(text, history);
+      const res = await buddyApi.send(text, history, uiLanguage);
       setMessages((prev) => [...prev, { role: "assistant", text: res.reply }]);
     } catch (e: unknown) {
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          text: e instanceof Error ? e.message : "Sorry, I could not answer right now. Please try again.",
+          text: e instanceof Error ? e.message : b.error,
           error: true,
         },
       ]);
@@ -196,7 +210,7 @@ export function Buddy() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: "#ffffff" }}>Buddy</div>
                 <div style={{ fontSize: 11.5, fontWeight: 400, color: "rgba(255,255,255,0.65)" }}>
-                  Ask me anything about ENTR
+                  {b.subtitle}
                 </div>
               </div>
               <button
@@ -308,7 +322,7 @@ export function Buddy() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && send(input)}
-                placeholder="Type in any language…"
+                placeholder={b.placeholder}
                 aria-label="Message Buddy"
                 lang=""
                 style={{

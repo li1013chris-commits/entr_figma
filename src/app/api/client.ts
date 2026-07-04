@@ -423,8 +423,8 @@ export interface BuddyTurn {
 }
 
 export const buddyApi = {
-  send: (message: string, history: BuddyTurn[]) =>
-    request<{ reply: string }>("/api/buddy", json({ message, history })),
+  send: (message: string, history: BuddyTurn[], language?: string) =>
+    request<{ reply: string }>("/api/buddy", json({ message, history, language })),
 };
 
 // ── Public jobs ────────────────────────────────────────────────────────────────

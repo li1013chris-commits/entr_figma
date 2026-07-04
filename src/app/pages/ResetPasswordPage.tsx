@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from "react-router";
 import { motion } from "motion/react";
 import { authApi } from "../api/client";
 import { BackArrow } from "../components/BackArrow";
+import { LanguageDropdown } from "../components/LanguageDropdown";
 
 function getStrength(pw: string): { level: 0 | 1 | 2 | 3; label: string; color: string } {
   if (pw.length < 8) return { level: 0, label: "Too short", color: "#E5E7EB" };
@@ -95,6 +96,9 @@ export function ResetPasswordPage() {
     return (
       <div style={{ position: "relative", minHeight: "100vh", background: "#F7F7F5", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, sans-serif", padding: "24px 16px" }}>
       <BackArrow floating />
+      <div style={{ position: "fixed", top: 20, right: 24, zIndex: 200 }}>
+        <LanguageDropdown compact />
+      </div>
         <div style={{ width: "100%", maxWidth: 480, background: "#ffffff", border: "1px solid #E5E7EB", borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", padding: "40px 40px", textAlign: "center" }}>
           <div style={{ width: 48, height: 48, borderRadius: "50%", background: "#FEF2F2", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2.5" strokeLinecap="round">
@@ -114,6 +118,9 @@ export function ResetPasswordPage() {
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#F7F7F5", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, sans-serif", padding: "24px 16px" }}>
       <BackArrow floating />
+      <div style={{ position: "fixed", top: 20, right: 24, zIndex: 200 }}>
+        <LanguageDropdown compact />
+      </div>
       <motion.div
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}

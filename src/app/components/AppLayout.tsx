@@ -1,22 +1,28 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { useNavigate, Link, useLocation } from "react-router";
 import { motion } from "motion/react";
 import { useAuth } from "../context/AuthContext";
 import { useLang } from "../context/LanguageContext";
 import { LanguageDropdown } from "./LanguageDropdown";
-import { employerVerifyApi } from "../api/client";
+import { NotificationBadge } from "./NotificationBadge";
+import { employerVerifyApi, employerApi, workerApi, interviewApi } from "../api/client";
+import { totalUnseenApplications, countStatusUpdates, NOTIFICATIONS_CHANGED } from "../utils/notifications";
 
 const CARD_SHADOW = "0 2px 8px rgba(0,0,0,0.08)";
 
 export { CARD_SHADOW };
 
+// Business verification is temporarily hidden from the UI (code kept intact).
+const SHOW_BUSINESS_VERIFICATION = false;
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const navigate          = useNavigate();
   const location          = useLocation();
-  const { t }             = useLang();
+  const { t, fitFont }    = useLang();
   const [loggingOut, setLoggingOut] = useState(false);
   const [bizVerified, setBizVerified] = useState<boolean | null>(null);
+  const [notifCount, setNotifCount] = useState(0);
 
   useEffect(() => {
     if (user?.role === "employer") {
@@ -26,11 +32,41 @@ export function AppLayout({ children }: { children: ReactNode }) {
     }
   }, [user]);
 
+  // Red badge on "Dashboard": unseen applicants (employer) or application
+  // updates + interviews awaiting confirmation (worker). Refreshes on page
+  // change, once a minute, and immediately when something is marked seen.
+  const refreshNotifications = useCallback(async () => {
+    if (!user) return;
+    try {
+      if (user.role === "employer") {
+        const data = await employerApi.getJobs();
+        setNotifCount(totalUnseenApplications(user.id, data.jobs));
+      } else {
+        const [appsData, ivData] = await Promise.all([
+          workerApi.getApplications(),
+          interviewApi.listWorker().catch(() => ({ interviews: [] })),
+        ]);
+        const pendingInterviews = ivData.interviews.filter((iv) => !iv.worker_confirmed).length;
+        setNotifCount(countStatusUpdates(user.id, appsData.applications) + pendingInterviews);
+      }
+    } catch { /* badge is best-effort */ }
+  }, [user]);
+
+  useEffect(() => {
+    refreshNotifications();
+    const timer = setInterval(refreshNotifications, 60_000);
+    window.addEventListener(NOTIFICATIONS_CHANGED, refreshNotifications);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener(NOTIFICATIONS_CHANGED, refreshNotifications);
+    };
+  }, [refreshNotifications, location.pathname]);
+
   const isActive = (path: string) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
   const navLinkStyle = (active: boolean): React.CSSProperties => ({
-    fontFamily: "Inter, sans-serif", fontSize: 14,
+    fontFamily: "Inter, sans-serif", fontSize: fitFont(14),
     fontWeight: active ? 600 : 400,
     color: active ? "#0A0F1E" : "#6B7280",
     textDecoration: "none",
@@ -75,35 +111,43 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <div style={{ display: "flex", alignItems: "center", gap: 4, flex: 1 }}>
             {user?.role === "employer" ? (
               <>
-                <Link to="/employer/dashboard" style={navLinkStyle(isActive("/employer/dashboard"))}>{t.layout.dashboard}</Link>
-                {bizVerified ? (
+                <span style={{ position: "relative", display: "inline-flex" }}>
+                  <Link to="/employer/dashboard" style={navLinkStyle(isActive("/employer/dashboard"))}>{t.layout.dashboard}</Link>
+                  <NotificationBadge count={notifCount} />
+                </span>
+                {(bizVerified || !SHOW_BUSINESS_VERIFICATION) ? (
                   <Link to="/employer/post-job" style={navLinkStyle(isActive("/employer/post-job"))}>{t.layout.postJob}</Link>
                 ) : (
                   <div title="Verify your restaurant to start posting jobs" style={{ ...navLinkStyle(false), opacity: 0.5, cursor: "not-allowed" }}>{t.layout.postJob}</div>
                 )}
-                <Link to="/employer/verify-business"
-                  style={{ ...navLinkStyle(isActive("/employer/verify-business")), display: "flex", alignItems: "center", gap: 5 }}>
-                  {bizVerified ? (
-                    <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Verified Business</>
-                  ) : (
-                    <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Verify Business</>
-                  )}
-                </Link>
-                <Link to="/employer/settings" style={navLinkStyle(isActive("/employer/settings"))}>Settings</Link>
+                {SHOW_BUSINESS_VERIFICATION && (
+                  <Link to="/employer/verify-business"
+                    style={{ ...navLinkStyle(isActive("/employer/verify-business")), display: "flex", alignItems: "center", gap: 5 }}>
+                    {bizVerified ? (
+                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>Verified Business</>
+                    ) : (
+                      <><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Verify Business</>
+                    )}
+                  </Link>
+                )}
+                <Link to="/employer/settings" style={navLinkStyle(isActive("/employer/settings"))}>{t.app.nav.settings}</Link>
               </>
             ) : (
               <>
-                <Link to="/worker/dashboard" style={navLinkStyle(isActive("/worker/dashboard"))}>{t.layout.dashboard}</Link>
+                <span style={{ position: "relative", display: "inline-flex" }}>
+                  <Link to="/worker/dashboard" style={navLinkStyle(isActive("/worker/dashboard"))}>{t.layout.dashboard}</Link>
+                  <NotificationBadge count={notifCount} />
+                </span>
                 <Link to="/worker/jobs" style={navLinkStyle(isActive("/worker/jobs"))}>{t.layout.browseJobs}</Link>
                 <Link to="/worker/verify" style={navLinkStyle(isActive("/worker/verify"))}>{t.layout.verification}</Link>
-                <Link to="/worker/settings" style={navLinkStyle(isActive("/worker/settings"))}>Settings</Link>
+                <Link to="/worker/settings" style={navLinkStyle(isActive("/worker/settings"))}>{t.app.nav.settings}</Link>
               </>
             )}
           </div>
 
-          {/* Right: user info + language (workers only) + logout */}
+          {/* Right: language selector (every page, left of profile) + user info + logout */}
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-            {user?.role === "worker" && <LanguageDropdown compact />}
+            <LanguageDropdown compact />
 
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#0A0F1E" }}>{user?.name}</div>

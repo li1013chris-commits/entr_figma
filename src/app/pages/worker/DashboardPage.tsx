@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { workerApi, interviewApi, type Application, type Verification, type Interview } from "../../api/client";
 import { useAuth } from "../../context/AuthContext";
 import { useLang } from "../../context/LanguageContext";
+import { markStatusesSeen } from "../../utils/notifications";
 
 function formatWhen(iso: string): string {
   return new Date(iso.includes("T") ? iso : iso + "Z").toLocaleString(undefined, {
@@ -15,6 +16,8 @@ function InterviewsSection({ interviews, onConfirmed }: {
   interviews: Interview[];
   onConfirmed: (id: number, calendarCreated: boolean) => void;
 }) {
+  const { t } = useLang();
+  const ivl = t.app.interviews;
   const [confirming, setConfirming] = useState<number | null>(null);
   const [error, setError] = useState("");
 
@@ -30,7 +33,7 @@ function InterviewsSection({ interviews, onConfirmed }: {
       const res = await interviewApi.confirm(id);
       onConfirmed(id, res.calendar_event_created);
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Could not confirm interview");
+      setError(e instanceof Error ? e.message : ivl.confirmError);
     } finally {
       setConfirming(null);
     }
@@ -38,7 +41,7 @@ function InterviewsSection({ interviews, onConfirmed }: {
 
   return (
     <div style={{ marginBottom: 28 }}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0A0F1E", margin: "0 0 12px" }}>My Interviews</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 700, color: "#0A0F1E", margin: "0 0 12px" }}>{ivl.title}</h2>
       {error && (
         <p role="alert" style={{ fontSize: 13, color: "#DC2626", margin: "0 0 10px" }}>{error}</p>
       )}
@@ -46,7 +49,7 @@ function InterviewsSection({ interviews, onConfirmed }: {
         {pending.map((iv) => (
           <div key={iv.id} style={{ background: "#FFFBEB", border: "1.5px solid #FDE68A", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
             <div>
-              <p style={{ fontSize: 11, fontWeight: 700, color: "#92400E", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px" }}>Please confirm this time</p>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#92400E", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 4px" }}>{ivl.confirmPrompt}</p>
               <p style={{ fontSize: 15, fontWeight: 700, color: "#0A0F1E", margin: "0 0 2px" }}>
                 {iv.title} · {iv.restaurant_name || iv.employer_name}
               </p>
@@ -57,7 +60,7 @@ function InterviewsSection({ interviews, onConfirmed }: {
               disabled={confirming === iv.id}
               style={{ padding: "10px 22px", fontSize: 14, fontWeight: 600, fontFamily: "Inter, sans-serif", color: "#0A0F1E", background: confirming === iv.id ? "#E5E7EB" : "#D4A853", border: "none", borderRadius: 8, cursor: confirming === iv.id ? "not-allowed" : "pointer", boxShadow: confirming === iv.id ? "none" : "0 2px 6px rgba(212,168,83,0.3)" }}
             >
-              {confirming === iv.id ? "Confirming…" : "Confirm interview"}
+              {confirming === iv.id ? t.app.interviews.confirming : t.app.interviews.confirm}
             </button>
           </div>
         ))}
@@ -73,7 +76,7 @@ function InterviewsSection({ interviews, onConfirmed }: {
                 {iv.title} · {iv.restaurant_name || iv.employer_name}
               </p>
               <p style={{ fontSize: 13, color: "#6B7280", margin: 0 }}>
-                {formatWhen(iv.scheduled_at)}{iv.calendar_invite_sent ? " · On your Google Calendar" : ""}
+                {formatWhen(iv.scheduled_at)}{iv.calendar_invite_sent ? ` · ${ivl.onCalendar}` : ""}
               </p>
             </div>
           </div>
@@ -135,6 +138,9 @@ export function WorkerDashboardPage() {
         setApplications(appsData.applications);
         setVerification(verData.verification);
         setInterviews(ivData.interviews);
+        // Opening the dashboard counts current statuses as seen,
+        // clearing the red update badge in the navbar.
+        if (user) markStatusesSeen(user.id, appsData.applications);
       })
       .finally(() => setLoading(false));
   }, []);

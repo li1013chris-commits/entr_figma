@@ -3,34 +3,24 @@ import { useNavigate } from "react-router";
 import { motion } from "motion/react";
 import { employerApi } from "../../api/client";
 import { BackArrow } from "../../components/BackArrow";
+import { useLang } from "../../context/LanguageContext";
 
-const PAY_TYPES = [
-  { value: "per_hour",    label: "Per Hour" },
-  { value: "per_day",     label: "Per Day" },
-  { value: "per_week",    label: "Per Week" },
-  { value: "biweekly",    label: "Biweekly" },
-  { value: "per_month",   label: "Per Month" },
-  { value: "salary_year", label: "Salary (yearly)" },
-];
+const PAY_TYPES = ["per_hour", "per_day", "per_week", "biweekly", "per_month", "salary_year"] as const;
 
-const HOURS_OPTIONS = [
-  { value: "full_time",     label: "Full-time (35–40 hrs/wk)" },
-  { value: "part_time",     label: "Part-time (15–25 hrs/wk)" },
-  { value: "weekends_only", label: "Weekends Only" },
-  { value: "flexible",      label: "Flexible" },
-  { value: "on_call",       label: "On-call" },
-];
+const HOURS_OPTIONS = ["full_time", "part_time", "weekends_only", "flexible", "on_call"] as const;
 
 const CONTACT_FIELDS = [
-  { key: "contact_phone",    label: "Phone number",        placeholder: "e.g. (336) 555-0142" },
-  { key: "contact_whatsapp", label: "WhatsApp",            placeholder: "e.g. +1 336 555 0142" },
-  { key: "contact_wechat",   label: "WeChat",              placeholder: "WeChat ID" },
-  { key: "contact_line",     label: "Line",                placeholder: "Line ID" },
-  { key: "contact_gchat",    label: "Google Chat / Gmail", placeholder: "you@gmail.com" },
+  { key: "contact_phone",    placeholder: "e.g. (336) 555-0142" },
+  { key: "contact_whatsapp", placeholder: "e.g. +1 336 555 0142" },
+  { key: "contact_wechat",   placeholder: "WeChat ID" },
+  { key: "contact_line",     placeholder: "Line ID" },
+  { key: "contact_gchat",    placeholder: "you@gmail.com" },
 ] as const;
 
 export function PostJobPage() {
   const navigate = useNavigate();
+  const { t } = useLang();
+  const pj = t.app.postJob;
 
   const [title, setTitle] = useState("");
   const [payAmount, setPayAmount] = useState("");
@@ -53,8 +43,8 @@ export function PostJobPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!hours) { setError("Please choose the hours for this job."); return; }
-    if (!hasContact) { setError("Please add at least one contact method so workers can reach you."); return; }
+    if (!hours) { setError(pj.errHours); return; }
+    if (!hasContact) { setError(pj.errContact); return; }
     setLoading(true);
     try {
       await employerApi.createJob({
@@ -75,7 +65,7 @@ export function PostJobPage() {
       });
       navigate("/employer/dashboard");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to post job");
+      setError(err instanceof Error ? err.message : pj.errFailed);
     } finally {
       setLoading(false);
     }
@@ -142,13 +132,13 @@ export function PostJobPage() {
             margin: "0 0 6px",
           }}
         >
-          New Listing
+          {pj.newListing}
         </p>
         <h1 style={{ fontSize: 28, fontWeight: 700, color: "#0A0F1E", margin: 0 }}>
-          Post a Job
+          {pj.title}
         </h1>
         <p style={{ fontSize: 14, color: "#6B7280", margin: "6px 0 0" }}>
-          Tell workers about the job. Simple and clear works best.
+          {pj.subtitle}
         </p>
       </motion.div>
 
@@ -188,7 +178,7 @@ export function PostJobPage() {
           {/* Position */}
           <div>
             <label htmlFor="job-title" style={labelStyle}>
-              Position <span style={{ color: "#DC2626" }}>*</span>
+              {pj.position} <span style={{ color: "#DC2626" }}>*</span>
             </label>
             <input
               id="job-title"
@@ -196,7 +186,7 @@ export function PostJobPage() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="e.g. Line Cook, Server, Dishwasher"
+              placeholder={pj.positionPlaceholder}
               style={inputStyle}
               onFocus={focus}
               onBlur={blur}
@@ -206,7 +196,7 @@ export function PostJobPage() {
           {/* Pay */}
           <div>
             <label htmlFor="job-pay" style={labelStyle}>
-              Pay <span style={{ color: "#DC2626" }}>*</span>
+              {pj.pay} <span style={{ color: "#DC2626" }}>*</span>
             </label>
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ position: "relative", flex: 1 }}>
@@ -236,7 +226,7 @@ export function PostJobPage() {
                 />
               </div>
               <select
-                aria-label="Pay period"
+                aria-label={pj.payPeriod}
                 value={payType}
                 onChange={(e) => setPayType(e.target.value)}
                 style={{ ...selectStyle, flex: 1 }}
@@ -244,7 +234,7 @@ export function PostJobPage() {
                 onBlur={blur}
               >
                 {PAY_TYPES.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
+                  <option key={p} value={p}>{pj.payTypes[p]}</option>
                 ))}
               </select>
             </div>
@@ -252,10 +242,10 @@ export function PostJobPage() {
             {/* Tips toggle */}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
               <span style={{ fontSize: 13, fontWeight: 500, color: "#0A0F1E" }}>
-                Tips included?
+                {pj.tipsIncluded}
               </span>
-              <div style={{ display: "flex", gap: 8 }} role="radiogroup" aria-label="Tips included">
-                {[{ v: true, l: "Yes" }, { v: false, l: "No" }].map(({ v, l }) => (
+              <div style={{ display: "flex", gap: 8 }} role="radiogroup" aria-label={pj.tipsIncluded}>
+                {[{ v: true, l: pj.yes }, { v: false, l: pj.no }].map(({ v, l }) => (
                   <button
                     key={l}
                     type="button"
@@ -285,7 +275,7 @@ export function PostJobPage() {
           {/* Hours */}
           <div>
             <label htmlFor="job-hours" style={labelStyle}>
-              Hours <span style={{ color: "#DC2626" }}>*</span>
+              {pj.hours} <span style={{ color: "#DC2626" }}>*</span>
             </label>
             <select
               id="job-hours"
@@ -296,9 +286,9 @@ export function PostJobPage() {
               onFocus={focus}
               onBlur={blur}
             >
-              <option value="" disabled>Choose hours…</option>
+              <option value="" disabled>{pj.chooseHours}</option>
               {HOURS_OPTIONS.map((h) => (
-                <option key={h.value} value={h.value}>{h.label}</option>
+                <option key={h} value={h}>{pj.hoursOptions[h]}</option>
               ))}
             </select>
           </div>
@@ -306,7 +296,7 @@ export function PostJobPage() {
           {/* Experience + Location */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div>
-              <label htmlFor="job-exp" style={labelStyle}>Years of experience needed</label>
+              <label htmlFor="job-exp" style={labelStyle}>{pj.expNeeded}</label>
               <input
                 id="job-exp"
                 type="number"
@@ -320,13 +310,13 @@ export function PostJobPage() {
               />
             </div>
             <div>
-              <label htmlFor="job-location" style={labelStyle}>Location</label>
+              <label htmlFor="job-location" style={labelStyle}>{pj.location}</label>
               <input
                 id="job-location"
                 type="text"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                placeholder="e.g. Greensboro, NC"
+                placeholder={pj.locationPlaceholder}
                 style={inputStyle}
                 onFocus={focus}
                 onBlur={blur}
@@ -336,13 +326,13 @@ export function PostJobPage() {
 
           {/* Skills needed (free text — replaces the old checkboxes) */}
           <div>
-            <label htmlFor="job-skills" style={labelStyle}>Skills needed (optional)</label>
+            <label htmlFor="job-skills" style={labelStyle}>{pj.skills}</label>
             <textarea
               id="job-skills"
               value={skillsText}
               onChange={(e) => setSkillsText(e.target.value)}
               rows={3}
-              placeholder="e.g. Wok cooking, food prep, works well under pressure"
+              placeholder={pj.skillsPlaceholder}
               style={{ ...inputStyle, resize: "vertical", lineHeight: "1.5" }}
               onFocus={focus}
               onBlur={blur}
@@ -351,15 +341,15 @@ export function PostJobPage() {
 
           {/* Contact information */}
           <div>
-            <h2 style={sectionTitleStyle}>Contact Information</h2>
+            <h2 style={sectionTitleStyle}>{pj.contactInfo}</h2>
             <p style={{ fontSize: 13, color: "#6B7280", margin: "4px 0 14px" }}>
-              How can workers reach you? Fill in at least one.{" "}
+              {pj.contactHint}{" "}
               <span style={{ color: "#DC2626" }}>*</span>
             </p>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               {CONTACT_FIELDS.map((f) => (
                 <div key={f.key}>
-                  <label htmlFor={`job-${f.key}`} style={labelStyle}>{f.label}</label>
+                  <label htmlFor={`job-${f.key}`} style={labelStyle}>{pj.contactLabels[f.key]}</label>
                   <input
                     id={`job-${f.key}`}
                     type="text"
@@ -379,13 +369,13 @@ export function PostJobPage() {
 
           {/* Additional information */}
           <div>
-            <label htmlFor="job-info" style={labelStyle}>Additional Information (optional)</label>
+            <label htmlFor="job-info" style={labelStyle}>{pj.additionalInfo}</label>
             <textarea
               id="job-info"
               value={additionalInfo}
               onChange={(e) => setAdditionalInfo(e.target.value)}
               rows={4}
-              placeholder="Anything else workers should know — schedule details, meals, parking, how to prepare…"
+              placeholder={pj.additionalPlaceholder}
               style={{ ...inputStyle, resize: "vertical", lineHeight: "1.5" }}
               onFocus={focus}
               onBlur={blur}
@@ -414,7 +404,7 @@ export function PostJobPage() {
                   : "0 2px 8px rgba(201,168,76,0.3)",
               }}
             >
-              {loading ? "Posting…" : "Post Job"}
+              {loading ? pj.posting : pj.postJob}
             </motion.button>
             <button
               type="button"
@@ -431,7 +421,7 @@ export function PostJobPage() {
                 cursor: "pointer",
               }}
             >
-              Cancel
+              {pj.cancel}
             </button>
           </div>
         </form>

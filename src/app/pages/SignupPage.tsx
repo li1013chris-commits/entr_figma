@@ -139,6 +139,12 @@ export function SignupPage() {
 
   const [name, setName]                     = useState("");
   const [email, setEmail]                   = useState("");
+  const [phone, setPhone]                   = useState("");
+  const [otp, setOtp]                       = useState("");
+  const [otpSent, setOtpSent]               = useState(false);
+  const [otpSending, setOtpSending]         = useState(false);
+  const [otpNotice, setOtpNotice]           = useState("");
+  const [resendIn, setResendIn]             = useState(0);
   const [password, setPassword]             = useState("");
   const [confirm, setConfirm]               = useState("");
   const [showPassword, setShowPassword]     = useState(false);
@@ -161,6 +167,34 @@ export function SignupPage() {
     if (r === "employer" || r === "worker") setRole(r);
   }, [searchParams]);
 
+  // Resend countdown for the SMS code
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
+
+  const phoneDigits = phone.replace(/\D/g, "");
+  const phoneLooksValid = phoneDigits.length >= 10 && phoneDigits.length <= 15;
+
+  const sendOtp = async () => {
+    if (!phoneLooksValid || otpSending || resendIn > 0) return;
+    setOtpSending(true);
+    setOtpNotice("");
+    try {
+      const res = await authApi.sendPhoneOtp(phone);
+      setOtpSent(true);
+      setResendIn(30);
+      setOtpNotice(res.sent
+        ? "Code sent. Check your phone for a 6-digit code."
+        : "We could not send the SMS right now. Please try again in a minute.");
+    } catch (err: unknown) {
+      setOtpNotice(err instanceof Error ? err.message : "Could not send the code. Try again.");
+    } finally {
+      setOtpSending(false);
+    }
+  };
+
   // ── Validation ───────────────────────────────────────────────────────────────
 
   const nameError         = submitted && !name.trim()               ? "Full name is required."          : "";
@@ -174,6 +208,11 @@ export function SignupPage() {
                             ? "Restaurant name is required."        : "";
   const tosError          = submitted && !tosAccepted
                             ? "Please agree to the Privacy Policy and Terms of Service." : "";
+  const phoneError        = submitted && !phone.trim()              ? "Phone number is required."
+                          : submitted && !phoneLooksValid           ? "Enter a valid phone number." : "";
+  const otpError          = submitted && !otpSent                   ? "Tap Send code to get your verification code."
+                          : submitted && otp.replace(/\D/g, "").length !== 6
+                            ? "Enter the 6-digit code we texted you." : "";
 
   const strength = getStrength(password);
   const passwordsMatch = password.length >= 8 && confirm === password;
@@ -182,6 +221,7 @@ export function SignupPage() {
 
   const isValid = name.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     && password.length >= 8 && passwordsMatch && tosAccepted
+    && phoneLooksValid && otpSent && otp.replace(/\D/g, "").length === 6
     && (role !== "employer" || restaurantName.trim());
 
   const handleSubmit = async (e: FormEvent) => {
@@ -195,6 +235,8 @@ export function SignupPage() {
         email, password, name, role,
         language_pref: languagePref,
         restaurant_name: restaurantName,
+        phone,
+        phone_otp: otp.replace(/\D/g, ""),
         tos_accepted: tosAccepted,
         date_of_birth: role === "worker" ? dateOfBirth : undefined,
         us_state: role === "worker" ? usState : undefined,
@@ -301,6 +343,49 @@ export function SignupPage() {
               onFocus={focus} onBlur={(e) => blur(e, emailError)} />
             <FieldError msg={emailError} />
           </div>
+
+          {/* Phone number + SMS verification code */}
+          <div>
+            <FieldLabel required>Phone number</FieldLabel>
+            <div style={{ display: "flex", gap: 10 }}>
+              <input type="tel" value={phone}
+                onChange={(e) => { setPhone(e.target.value); setOtpSent(false); setOtp(""); setOtpNotice(""); }}
+                placeholder="(336) 555-0142"
+                style={{ ...inputError(!!phoneError), flex: 1 }}
+                onFocus={focus} onBlur={(e) => blur(e, phoneError)} />
+              <button type="button" onClick={sendOtp}
+                disabled={!phoneLooksValid || otpSending || resendIn > 0}
+                style={{
+                  padding: "0 16px", fontSize: 13, fontWeight: 600, fontFamily: "Inter, sans-serif",
+                  color: "#0A0F1E", whiteSpace: "nowrap",
+                  background: (!phoneLooksValid || otpSending || resendIn > 0) ? "#F3F4F6" : "#C9A84C",
+                  border: "none", borderRadius: 8,
+                  cursor: (!phoneLooksValid || otpSending || resendIn > 0) ? "not-allowed" : "pointer",
+                }}>
+                {otpSending ? "Sending…" : resendIn > 0 ? `Resend in ${resendIn}s` : otpSent ? "Resend code" : "Send code"}
+              </button>
+            </div>
+            {otpNotice && (
+              <p style={{ fontSize: 12, color: otpNotice.startsWith("Code sent") ? "#16A34A" : "#D97706", margin: "4px 0 0", fontWeight: 500 }}>
+                {otpNotice}
+              </p>
+            )}
+            <FieldError msg={phoneError} />
+          </div>
+
+          {otpSent && (
+            <div>
+              <FieldLabel required>SMS verification code</FieldLabel>
+              <input type="text" inputMode="numeric" autoComplete="one-time-code" maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="6-digit code"
+                style={{ ...inputError(!!otpError), letterSpacing: "0.35em", fontWeight: 600, maxWidth: 220 }}
+                onFocus={focus} onBlur={(e) => blur(e, otpError)} />
+              <FieldError msg={otpError} />
+            </div>
+          )}
+          {!otpSent && submitted && otpError && <FieldError msg={otpError} />}
 
           {/* Password */}
           <div>

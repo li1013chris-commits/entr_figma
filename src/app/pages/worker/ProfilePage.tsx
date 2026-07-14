@@ -29,7 +29,7 @@ const SKILL_LABELS: Record<string, Record<string, string>> = {
 };
 
 export function ProfilePage() {
-  const { user } = useAuth();
+  const { user, fetchMe } = useAuth();
   const navigate = useNavigate();
   const { t, currentLang } = useLang();
 
@@ -69,7 +69,8 @@ export function ProfilePage() {
         bio: formData.bio,
       };
 
-      await workerApi.completeProfile(payload);
+      await workerApi.updateProfile(payload);
+      await fetchMe();   // refresh the cached user so the form shows saved values next time
       navigate("/worker/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");

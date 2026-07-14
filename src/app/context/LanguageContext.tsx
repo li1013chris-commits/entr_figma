@@ -346,6 +346,15 @@ export const translations = {
     app: {
       nav: { settings: "Settings" },
       disclosure: "ENTR is a hiring platform and is not the employer. All employment decisions are made by the restaurant owner.",
+      report: {
+        link: "Report this job", title: "Report this job",
+        reasonLabel: "Reason", choose: "Choose a reason…",
+        reasons: { fake_job: "Fake job", wrong_pay: "Wrong pay listed", inappropriate: "Inappropriate content", other: "Other" },
+        notesLabel: "Notes (optional)", notesPlaceholder: "Anything else we should know?",
+        submit: "Submit", submitting: "Submitting…", cancel: "Cancel",
+        thanks: "Thank you. We will review this job.", close: "Close",
+        error: "Could not send the report. Please try again.",
+      },
       settings: {
         accountLabel: "Account", title: "Settings",
         accountInfo: "Account information",
@@ -761,6 +770,15 @@ export const translations = {
     app: {
       nav: { settings: "Ajustes" },
       disclosure: "ENTR es una plataforma de contratación y no es el empleador. Todas las decisiones de empleo las toma el dueño del restaurante.",
+      report: {
+        link: "Reportar este trabajo", title: "Reportar este trabajo",
+        reasonLabel: "Motivo", choose: "Elige un motivo…",
+        reasons: { fake_job: "Trabajo falso", wrong_pay: "Pago incorrecto", inappropriate: "Contenido inapropiado", other: "Otro" },
+        notesLabel: "Notas (opcional)", notesPlaceholder: "¿Algo más que debamos saber?",
+        submit: "Enviar", submitting: "Enviando…", cancel: "Cancelar",
+        thanks: "Gracias. Revisaremos este trabajo.", close: "Cerrar",
+        error: "No se pudo enviar el reporte. Intenta de nuevo.",
+      },
       settings: {
         accountLabel: "Cuenta", title: "Ajustes",
         accountInfo: "Información de la cuenta",
@@ -1177,6 +1195,15 @@ export const translations = {
     app: {
       nav: { settings: "设置" },
       disclosure: "ENTR 是招聘平台，不是雇主。所有雇佣决定由餐厅老板做出。",
+      report: {
+        link: "举报此工作", title: "举报此工作",
+        reasonLabel: "原因", choose: "选择原因…",
+        reasons: { fake_job: "虚假工作", wrong_pay: "薪资不实", inappropriate: "不当内容", other: "其他" },
+        notesLabel: "备注（可选）", notesPlaceholder: "还有什么想告诉我们的？",
+        submit: "提交", submitting: "提交中…", cancel: "取消",
+        thanks: "谢谢。我们会审核这个工作。", close: "关闭",
+        error: "无法发送举报。请重试。",
+      },
       settings: {
         accountLabel: "账户", title: "设置",
         accountInfo: "账户信息",
@@ -1593,6 +1620,15 @@ export const translations = {
     app: {
       nav: { settings: "設置" },
       disclosure: "ENTR 是招聘平台，不是僱主。所有僱傭決定由餐廳老闆做出。",
+      report: {
+        link: "舉報此工作", title: "舉報此工作",
+        reasonLabel: "原因", choose: "選擇原因…",
+        reasons: { fake_job: "虛假工作", wrong_pay: "薪資不實", inappropriate: "不當內容", other: "其他" },
+        notesLabel: "備註（可選）", notesPlaceholder: "還有什麼想告訴我們的？",
+        submit: "提交", submitting: "提交中…", cancel: "取消",
+        thanks: "謝謝。我們會審核這個工作。", close: "關閉",
+        error: "無法發送舉報。請重試。",
+      },
       settings: {
         accountLabel: "賬戶", title: "設置",
         accountInfo: "賬戶信息",
@@ -1932,6 +1968,15 @@ export const translations = {
     app: {
       nav: { settings: "Paramètres" },
       disclosure: "ENTR est une plateforme d'embauche et n'est pas l'employeur. Toutes les décisions d'embauche sont prises par le propriétaire du restaurant.",
+      report: {
+        link: "Signaler cette offre", title: "Signaler cette offre",
+        reasonLabel: "Raison", choose: "Choisissez une raison…",
+        reasons: { fake_job: "Fausse offre", wrong_pay: "Salaire incorrect", inappropriate: "Contenu inapproprié", other: "Autre" },
+        notesLabel: "Notes (facultatif)", notesPlaceholder: "Autre chose à nous dire ?",
+        submit: "Envoyer", submitting: "Envoi…", cancel: "Annuler",
+        thanks: "Merci. Nous examinerons cette offre.", close: "Fermer",
+        error: "Impossible d'envoyer le signalement. Réessayez.",
+      },
       settings: {
         accountLabel: "Compte", title: "Paramètres",
         accountInfo: "Informations du compte",
@@ -2271,6 +2316,15 @@ export const translations = {
     app: {
       nav: { settings: "Configurações" },
       disclosure: "O ENTR é uma plataforma de contratação e não é o empregador. Todas as decisões de emprego são tomadas pelo dono do restaurante.",
+      report: {
+        link: "Denunciar este trabalho", title: "Denunciar este trabalho",
+        reasonLabel: "Motivo", choose: "Escolha um motivo…",
+        reasons: { fake_job: "Trabalho falso", wrong_pay: "Salário incorreto", inappropriate: "Conteúdo inapropriado", other: "Outro" },
+        notesLabel: "Notas (opcional)", notesPlaceholder: "Mais alguma coisa que devemos saber?",
+        submit: "Enviar", submitting: "Enviando…", cancel: "Cancelar",
+        thanks: "Obrigado. Vamos revisar este trabalho.", close: "Fechar",
+        error: "Não foi possível enviar a denúncia. Tente novamente.",
+      },
       settings: {
         accountLabel: "Conta", title: "Configurações",
         accountInfo: "Informações da conta",
@@ -2610,6 +2664,15 @@ export const translations = {
     app: {
       nav: { settings: "Cài đặt" },
       disclosure: "ENTR là nền tảng tuyển dụng và không phải là nhà tuyển dụng. Mọi quyết định tuyển dụng đều do chủ nhà hàng đưa ra.",
+      report: {
+        link: "Báo cáo công việc này", title: "Báo cáo công việc này",
+        reasonLabel: "Lý do", choose: "Chọn lý do…",
+        reasons: { fake_job: "Công việc giả", wrong_pay: "Lương ghi sai", inappropriate: "Nội dung không phù hợp", other: "Khác" },
+        notesLabel: "Ghi chú (tùy chọn)", notesPlaceholder: "Còn điều gì chúng tôi nên biết?",
+        submit: "Gửi", submitting: "Đang gửi…", cancel: "Hủy",
+        thanks: "Cảm ơn. Chúng tôi sẽ xem xét công việc này.", close: "Đóng",
+        error: "Không thể gửi báo cáo. Vui lòng thử lại.",
+      },
       settings: {
         accountLabel: "Tài khoản", title: "Cài đặt",
         accountInfo: "Thông tin tài khoản",

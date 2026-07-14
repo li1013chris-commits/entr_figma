@@ -170,10 +170,14 @@ export const authApi = {
     language_pref?: string;
     restaurant_name?: string;
     phone?: string;
+    phone_otp?: string;
     tos_accepted?: boolean;
     date_of_birth?: string;
     us_state?: string;
   }) => request<{ user: User; under_18?: boolean }>("/api/auth/signup", json(body)),
+
+  sendPhoneOtp: (phone: string) =>
+    request<{ sent: boolean; phone: string }>("/api/auth/send-phone-otp", json({ phone })),
 
   login: (body: { email: string; password: string }) =>
     request<{ user: User }>("/api/auth/login", json(body)),
@@ -307,19 +311,8 @@ export const workerApi = {
       body: JSON.stringify(body),
     }),
 
-  completeProfile: (body: {
-    phone: string;
-    languages_spoken: string;
-    experience_years: number;
-    skills: string;
-    availability: string;
-    bio: string;
-  }) =>
-    request<{ user: User }>("/api/worker/profile/complete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }),
+  reportJob: (jobId: number, reason: string, notes: string) =>
+    request<{ ok: boolean }>(`/api/jobs/${jobId}/report`, json({ reason, notes })),
 };
 
 // ── Employer verification ─────────────────────────────────────────────────────

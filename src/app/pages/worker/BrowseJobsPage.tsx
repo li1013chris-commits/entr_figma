@@ -5,6 +5,7 @@ import { workerApi, type Job } from "../../api/client";
 import { useLang } from "../../context/LanguageContext";
 import { useAuth } from "../../context/AuthContext";
 import { ShareModal } from "../../components/ShareModal";
+import { ReportJobModal } from "../../components/ReportJobModal";
 import { ContactEmployer } from "../../components/ContactEmployer";
 import { EmploymentDisclosure } from "../../components/EmploymentDisclosure";
 
@@ -271,6 +272,7 @@ export function BrowseJobsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [shareJob, setShareJob] = useState<Job | null>(null);
+  const [reportJob, setReportJob] = useState<Job | null>(null);
 
   // Location search (approximate, ~30 miles via backend)
   const [locationQuery, setLocationQuery] = useState("");
@@ -497,6 +499,19 @@ export function BrowseJobsPage() {
                   Share
                 </button>
               </div>
+
+              {/* Report this job */}
+              <button
+                onClick={() => setReportJob(job)}
+                style={{ marginTop: 10, alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", padding: 0, cursor: "pointer", fontFamily: "Inter, sans-serif", fontSize: 12, color: "#9CA3AF" }}
+                onMouseEnter={(e) => ((e.currentTarget as HTMLElement).style.color = "#DC2626")}
+                onMouseLeave={(e) => ((e.currentTarget as HTMLElement).style.color = "#9CA3AF")}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>
+                </svg>
+                {t.app.report.link}
+              </button>
             </motion.div>
           ))}
         </div>
@@ -506,6 +521,10 @@ export function BrowseJobsPage() {
 
       {shareJob && (
         <ShareModal jobId={shareJob.id} jobTitle={shareJob.title} onClose={() => setShareJob(null)} />
+      )}
+
+      {reportJob && (
+        <ReportJobModal jobId={reportJob.id} jobTitle={reportJob.title} onClose={() => setReportJob(null)} />
       )}
     </div>
   );
